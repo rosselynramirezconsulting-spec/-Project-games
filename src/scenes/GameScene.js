@@ -41,6 +41,20 @@ export default class GameScene extends Phaser.Scene {
   }
 
   create() {
+    try {
+      this._createGame();
+    } catch (e) {
+      // Show the error visibly so we can debug without DevTools
+      this.cameras.main.setBackgroundColor('#000033');
+      this.add.text(195, 300, 'ERROR:\n' + e.message, {
+        fontSize: '16px', fill: '#ff4444', fontFamily: 'Arial',
+        wordWrap: { width: 360 }, align: 'center',
+      }).setOrigin(0.5);
+      console.error(e);
+    }
+  }
+
+  _createGame() {
     this.physics.world.setBounds(0, 0, 390, WORLD_H);
     this.cameras.main.setBounds(0, 0, 390, WORLD_H);
     this.cameras.main.setBackgroundColor('#87CEEB');
@@ -105,7 +119,7 @@ export default class GameScene extends Phaser.Scene {
     this.events.emit('scoreUpdate',  this.score);
     this.events.emit('heightUpdate', 0);
     this.events.emit('waterUpdate',  0);
-  }
+  } // end _createGame
 
   // ── Clouds ──────────────────────────────────────────────────────────
   _addClouds() {
