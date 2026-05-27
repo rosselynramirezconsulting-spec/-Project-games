@@ -256,8 +256,19 @@ export function drawRainDrop(g) {
 }
 
 export function drawCoin(g) {
+  const pts = starPoints(14, 14, 5, 12, 5);
   g.fillStyle(0xffd700);
-  g.fillStar(14, 14, 5, 12, 6);
+  g.fillPoints(pts, true);
   g.lineStyle(2, 0xe6b800, 1);
-  g.strokeStar(14, 14, 5, 12, 6);
+  g.strokePoints(pts, true);
+}
+
+function starPoints(cx, cy, numPoints, outerR, innerR) {
+  const pts = [];
+  for (let i = 0; i < numPoints * 2; i++) {
+    const angle = (i / (numPoints * 2)) * Math.PI * 2 - Math.PI / 2;
+    const r = i % 2 === 0 ? outerR : innerR;
+    pts.push({ x: cx + Math.cos(angle) * r, y: cy + Math.sin(angle) * r });
+  }
+  return pts;
 }
