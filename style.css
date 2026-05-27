@@ -18,18 +18,14 @@ html, body {
   -webkit-user-select: none;
 }
 
+/* Phaser's scale manager handles canvas centering via inline styles.
+   The container must not use flexbox or it overrides Phaser's centering. */
 #game-container {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: absolute;
+  inset: 0;
 }
 
 canvas {
   display: block;
-  max-width: 100vw;
-  max-height: 100vh;
-  image-rendering: pixelated;
   touch-action: none;
 }
