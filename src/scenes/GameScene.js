@@ -198,7 +198,7 @@ export default class GameScene extends Phaser.Scene {
         const img = this.physics.add.image(p.x, p.y, texKey)
           .setDisplaySize(p.w, 18);
         img.setImmovable(true);
-        img.setAllowGravity(false);
+        img.body.allowGravity = false;
         // Blue tint so player can tell it moves
         img.setTint(0x66ccff);
         const spd = Phaser.Math.Between(55, 105) * (Math.random() < 0.5 ? 1 : -1);
@@ -234,8 +234,8 @@ export default class GameScene extends Phaser.Scene {
     const type   = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
     const animal = this.animalGroup.create(px, py - 30, type);
     animal.setScale(0.78).setDepth(4);
-    animal.setAllowGravity(false);
-    animal.body.setImmovable(true);
+    animal.body.allowGravity = false;
+    animal.body.immovable = true;
     this.tweens.add({
       targets: animal,
       y: animal.y - 7,
