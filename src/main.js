@@ -5,7 +5,7 @@ import UIScene from './scenes/UIScene.js';
 import WinScene from './scenes/WinScene.js';
 
 const config = {
-  type: Phaser.AUTO,
+  type: Phaser.CANVAS,
   parent: 'game-container',
   width: 390,
   height: 844,
