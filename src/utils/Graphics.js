@@ -272,3 +272,36 @@ function starPoints(cx, cy, numPoints, outerR, innerR) {
   }
   return pts;
 }
+
+export function drawPlatform(g) {
+  // 96x18 wood plank
+  g.fillStyle(0xb06820);
+  g.fillRect(0, 0, 96, 18);
+  g.fillStyle(0xd4924a);
+  g.fillRect(0, 0, 96, 5);
+  g.lineStyle(1, 0x7a4010, 0.9);
+  for (let x = 24; x < 96; x += 24) g.lineBetween(x, 0, x, 18);
+  g.lineStyle(1, 0x7a4010, 0.4);
+  g.lineBetween(0, 9, 96, 9);
+}
+
+export function drawIcePlatform(g) {
+  // 96x18 ice slab
+  g.fillStyle(0x88d8f0);
+  g.fillRect(0, 0, 96, 18);
+  g.fillStyle(0xffffff);
+  g.fillRect(2, 2, 92, 5);
+  g.fillStyle(0x44a8d8);
+  g.fillRect(0, 12, 96, 6);
+  g.lineStyle(1, 0x5bb5e8, 0.6);
+  for (let x = 16; x < 96; x += 16) g.lineBetween(x, 0, x, 18);
+}
+
+export function drawHeart(g) {
+  g.fillStyle(0xff3333);
+  g.fillCircle(7, 7, 6);
+  g.fillCircle(17, 7, 6);
+  g.fillTriangle(1, 9, 23, 9, 12, 22);
+  g.fillStyle(0xff8888);
+  g.fillCircle(5, 5, 2);
+}

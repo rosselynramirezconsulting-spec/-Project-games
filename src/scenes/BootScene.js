@@ -1,4 +1,4 @@
-import { drawNoah, drawArk, drawAnimal, drawBackground, drawWater, drawRainDrop, drawCoin } from '../utils/Graphics.js';
+import { drawNoah, drawArk, drawAnimal, drawBackground, drawWater, drawRainDrop, drawCoin, drawPlatform, drawIcePlatform, drawHeart } from '../utils/Graphics.js';
 
 export default class BootScene extends Phaser.Scene {
   constructor() {
@@ -47,6 +47,19 @@ export default class BootScene extends Phaser.Scene {
     drawCoin(g);
     g.generateTexture('star', 28, 28);
 
+    g.clear();
+    drawPlatform(g);
+    g.generateTexture('platform', 96, 18);
+
+    g.clear();
+    drawIcePlatform(g);
+    g.generateTexture('iceplatform', 96, 18);
+
+    g.clear();
+    drawHeart(g);
+    g.generateTexture('heart', 24, 24);
+
+    g.clear();
     g.destroy();
   }
 }
