@@ -44,13 +44,15 @@ export default class GameScene extends Phaser.Scene {
     try {
       this._createGame();
     } catch (e) {
-      // Show the error visibly so we can debug without DevTools
       this.cameras.main.setBackgroundColor('#000033');
-      this.add.text(195, 300, 'ERROR:\n' + e.message, {
-        fontSize: '16px', fill: '#ff4444', fontFamily: 'Arial',
-        wordWrap: { width: 360 }, align: 'center',
-      }).setOrigin(0.5);
-      console.error(e);
+      this.add.rectangle(195, 300, 370, 400, 0x220000, 0.95)
+        .setScrollFactor(0).setDepth(100);
+      const msg = 'GAME ERROR:\n' + e.message + '\n\n' + (e.stack || '').slice(0, 300);
+      this.add.text(195, 300, msg, {
+        fontSize: '13px', fill: '#ff6666', fontFamily: 'monospace',
+        wordWrap: { width: 350 }, align: 'left',
+      }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(101);
+      console.error('GameScene crash:', e);
     }
   }
 
@@ -363,6 +365,7 @@ export default class GameScene extends Phaser.Scene {
 
   // ── Main loop ─────────────────────────────────────────────────────────
   update(time, delta) {
+    if (!this.noah || !this._movingPlats) return; // guard: _createGame() failed
     const noah = this.noah;
     const dt   = delta / 1000;
 
