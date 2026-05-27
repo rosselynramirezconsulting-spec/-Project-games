@@ -48,8 +48,8 @@ export default class MenuScene extends Phaser.Scene {
       strokeThickness: 4,
     }).setOrigin(0.5);
 
-    // Subtitle
-    this.add.text(width / 2, height * 0.59, 'Help Noah collect pairs of animals!', {
+    // Subtitle — updated for vertical platformer
+    this.add.text(width / 2, height * 0.59, 'Jump up platforms to reach the Ark!', {
       fontSize: '18px',
       fontFamily: 'Arial',
       fill: '#ffffff',
@@ -79,7 +79,7 @@ export default class MenuScene extends Phaser.Scene {
         scaleY: 0.95,
         duration: 80,
         yoyo: true,
-        onComplete: () => this.scene.start('Game'),
+        onComplete: () => this.scene.start('Game', { level: 1, score: 0 }),
       });
     });
 

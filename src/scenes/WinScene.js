@@ -4,6 +4,7 @@ export default class WinScene extends Phaser.Scene {
   }
 
   init(data) {
+    this.level = data.level || 1;
     this.finalScore = data.score || 0;
   }
 
@@ -15,8 +16,8 @@ export default class WinScene extends Phaser.Scene {
 
     // Rainbow banner
     this.add.rectangle(width / 2, height * 0.12, 380, 80, 0x000000, 0.4);
-    this.add.text(width / 2, height * 0.10, 'You Did It!', {
-      fontSize: '46px',
+    this.add.text(width / 2, height * 0.09, `Level ${this.level} Complete! 🎉`, {
+      fontSize: '36px',
       fontFamily: 'Arial',
       fontStyle: 'bold',
       fill: '#ffe066',
@@ -24,8 +25,8 @@ export default class WinScene extends Phaser.Scene {
       strokeThickness: 6,
     }).setOrigin(0.5);
 
-    this.add.text(width / 2, height * 0.165, 'All animals are safe! 🌈', {
-      fontSize: '22px',
+    this.add.text(width / 2, height * 0.158, 'Noah reached the Ark!', {
+      fontSize: '20px',
       fontFamily: 'Arial',
       fill: '#ffffff',
       stroke: '#1a5a90',
@@ -34,7 +35,7 @@ export default class WinScene extends Phaser.Scene {
 
     // Score display
     this.add.rectangle(width / 2, height * 0.52, 300, 70, 0x000000, 0.4);
-    this.add.text(width / 2, height * 0.50, `Final Score`, {
+    this.add.text(width / 2, height * 0.50, 'Score', {
       fontSize: '20px',
       fontFamily: 'Arial',
       fill: '#aaffaa',
@@ -67,11 +68,11 @@ export default class WinScene extends Phaser.Scene {
     // Star particles
     this.createStars();
 
-    // Play Again button
-    const btnBg = this.add.rectangle(width / 2, height * 0.88, 240, 64, 0xff8c00)
+    // Next Level button
+    const nextBtnBg = this.add.rectangle(width / 2 - 70, height * 0.88, 220, 60, 0xff8c00)
       .setInteractive({ useHandCursor: true });
-    this.add.text(width / 2, height * 0.88, '🔁  Play Again', {
-      fontSize: '28px',
+    this.add.text(width / 2 - 70, height * 0.88, 'Next Level →', {
+      fontSize: '26px',
       fontFamily: 'Arial',
       fontStyle: 'bold',
       fill: '#ffffff',
@@ -79,18 +80,34 @@ export default class WinScene extends Phaser.Scene {
       strokeThickness: 4,
     }).setOrigin(0.5);
 
-    btnBg.on('pointerdown', () => {
-      this.scene.start('Game');
+    nextBtnBg.on('pointerdown', () => {
+      this.scene.start('Game', { level: this.level + 1, score: this.finalScore });
     });
 
     this.tweens.add({
-      targets: btnBg,
+      targets: nextBtnBg,
       scaleX: 1.05,
       scaleY: 1.05,
       duration: 700,
       yoyo: true,
       repeat: -1,
       ease: 'Sine.easeInOut',
+    });
+
+    // Menu button (secondary)
+    const menuBtnBg = this.add.rectangle(width - 55, height * 0.88, 90, 50, 0x555555)
+      .setInteractive({ useHandCursor: true });
+    this.add.text(width - 55, height * 0.88, 'Menu', {
+      fontSize: '20px',
+      fontFamily: 'Arial',
+      fontStyle: 'bold',
+      fill: '#ffffff',
+      stroke: '#222',
+      strokeThickness: 3,
+    }).setOrigin(0.5);
+
+    menuBtnBg.on('pointerdown', () => {
+      this.scene.start('Menu');
     });
   }
 

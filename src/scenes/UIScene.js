@@ -1,5 +1,3 @@
-const PAIRS_NEEDED = 8;
-
 export default class UIScene extends Phaser.Scene {
   constructor() {
     super({ key: 'UI', active: false });
@@ -10,13 +8,13 @@ export default class UIScene extends Phaser.Scene {
   }
 
   create() {
-    const { width } = this.cameras.main;
+    const { width, height } = this.cameras.main;
 
     // Top HUD panel
     this.add.rectangle(width / 2, 28, width, 56, 0x000000, 0.45).setDepth(50);
 
-    // Score
-    this.scoreLabel = this.add.text(16, 14, 'Score: 0', {
+    // Level label top-left
+    this.levelLabel = this.add.text(16, 14, 'Level: 1', {
       fontSize: '22px',
       fontFamily: 'Arial',
       fontStyle: 'bold',
@@ -25,18 +23,32 @@ export default class UIScene extends Phaser.Scene {
       strokeThickness: 3,
     }).setDepth(51);
 
-    // Pairs counter
-    this.pairsLabel = this.add.text(width - 16, 14, `Pairs: 0 / ${PAIRS_NEEDED}`, {
-      fontSize: '22px',
-      fontFamily: 'Arial',
-      fontStyle: 'bold',
-      fill: '#aaffaa',
-      stroke: '#333',
-      strokeThickness: 3,
-    }).setDepth(51).setOrigin(1, 0);
+    // Lives row top-right (3 heart images)
+    this.hearts = [];
+    for (let i = 0; i < 3; i++) {
+      const heart = this.add.image(width - 20 - i * 32, 28, 'heart')
+        .setScale(1.1)
+        .setDepth(51);
+      this.hearts.push(heart);
+    }
+
+    // Height progress bar — thin vertical bar on left edge
+    const barX = 6;
+    const barTop = 60;
+    const barBottom = height - 20;
+    const barHeight = barBottom - barTop;
+
+    // Background track
+    this.add.rectangle(barX, barTop + barHeight / 2, 8, barHeight, 0x000000, 0.3).setDepth(50).setOrigin(0.5, 0.5);
+
+    // Fill bar (grows upward)
+    this.progressBarBg = this.add.rectangle(barX, barBottom, 6, 0, 0x00ff88, 0.8)
+      .setDepth(51).setOrigin(0.5, 1);
+    this._barHeight = barHeight;
+    this._barBottom = barBottom;
 
     // Instruction banner (fades out)
-    const instText = this.add.text(width / 2, 80, 'Collect pairs of animals & bring them to the Ark!', {
+    const instText = this.add.text(width / 2, 80, 'Jump up to reach the Ark!', {
       fontSize: '15px',
       fontFamily: 'Arial',
       fill: '#fffde7',
@@ -54,19 +66,29 @@ export default class UIScene extends Phaser.Scene {
     });
 
     // Listen for game events
-    this.gameScene.events.on('scoreUpdate', (score) => {
-      this.scoreLabel.setText(`Score: ${score}`);
+    this.gameScene.events.on('levelUpdate', (level) => {
+      this.levelLabel.setText(`Level: ${level}`);
     });
 
-    this.gameScene.events.on('pairsUpdate', (pairs) => {
-      this.pairsLabel.setText(`Pairs: ${pairs} / ${PAIRS_NEEDED}`);
-      // Animate label on update
-      this.tweens.add({
-        targets: this.pairsLabel,
-        scaleX: 1.2, scaleY: 1.2,
-        duration: 120,
-        yoyo: true,
+    this.gameScene.events.on('livesUpdate', (lives) => {
+      this.hearts.forEach((h, i) => {
+        h.setAlpha(i < lives ? 1.0 : 0.25);
       });
+      // Pulse remaining hearts
+      if (lives > 0) {
+        this.tweens.add({
+          targets: this.hearts[lives - 1],
+          scaleX: 1.4,
+          scaleY: 1.4,
+          duration: 120,
+          yoyo: true,
+        });
+      }
+    });
+
+    this.gameScene.events.on('heightUpdate', (progress) => {
+      const fillH = this._barHeight * progress;
+      this.progressBarBg.height = fillH;
     });
   }
 }
