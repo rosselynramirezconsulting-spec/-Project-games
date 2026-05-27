@@ -13,82 +13,91 @@ export default class UIScene extends Phaser.Scene {
     // Top HUD panel
     this.add.rectangle(width / 2, 28, width, 56, 0x000000, 0.45).setDepth(50);
 
-    // Level label top-left
-    this.levelLabel = this.add.text(16, 14, 'Level: 1', {
-      fontSize: '22px',
-      fontFamily: 'Arial',
-      fontStyle: 'bold',
-      fill: '#ffe066',
-      stroke: '#333',
-      strokeThickness: 3,
+    // Level label — top left
+    this.levelLabel = this.add.text(16, 14, 'Level 1', {
+      fontSize: '20px', fontFamily: 'Arial', fontStyle: 'bold',
+      fill: '#ffe066', stroke: '#333', strokeThickness: 3,
     }).setDepth(51);
 
-    // Lives row top-right (3 heart images)
+    // Score — below level
+    this.scoreLabel = this.add.text(16, 38, 'Score: 0', {
+      fontSize: '15px', fontFamily: 'Arial',
+      fill: '#aaffaa', stroke: '#222', strokeThickness: 2,
+    }).setDepth(51);
+
+    // Hearts — top right
     this.hearts = [];
     for (let i = 0; i < 3; i++) {
-      const heart = this.add.image(width - 20 - i * 32, 28, 'heart')
-        .setScale(1.1)
-        .setDepth(51);
-      this.hearts.push(heart);
+      this.hearts.push(
+        this.add.image(width - 20 - i * 32, 28, 'heart').setScale(1.1).setDepth(51)
+      );
     }
 
-    // Height progress bar — thin vertical bar on left edge
-    const barX = 6;
-    const barTop = 60;
-    const barBottom = height - 20;
-    const barHeight = barBottom - barTop;
-
-    // Background track
-    this.add.rectangle(barX, barTop + barHeight / 2, 8, barHeight, 0x000000, 0.3).setDepth(50).setOrigin(0.5, 0.5);
-
-    // Fill bar (grows upward)
-    this.progressBarBg = this.add.rectangle(barX, barBottom, 6, 0, 0x00ff88, 0.8)
+    // Height progress bar — thin bar on left edge
+    const barX = 6, barTop = 60, barBottom = height - 175;
+    const barH = barBottom - barTop;
+    this.add.rectangle(barX, barTop + barH / 2, 8, barH, 0x000000, 0.3).setDepth(50).setOrigin(0.5);
+    this.progressBar = this.add.rectangle(barX, barBottom, 6, 0, 0x00ff88, 0.85)
       .setDepth(51).setOrigin(0.5, 1);
-    this._barHeight = barHeight;
+    this._barH      = barH;
     this._barBottom = barBottom;
 
-    // Instruction banner (fades out)
-    const instText = this.add.text(width / 2, 80, 'Jump up to reach the Ark!', {
-      fontSize: '15px',
-      fontFamily: 'Arial',
-      fill: '#fffde7',
-      stroke: '#1a5a90',
-      strokeThickness: 3,
-      wordWrap: { width: 360 },
-      align: 'center',
-    }).setDepth(51).setOrigin(0.5);
+    // Ark icon at top of progress bar
+    this.add.image(barX, barTop - 12, 'ark').setScale(0.38).setDepth(51);
 
-    this.tweens.add({
-      targets: instText,
-      alpha: 0,
-      delay: 4000,
-      duration: 1500,
+    // Instruction (fades out)
+    const inst = this.add.text(width / 2, 80, 'Jump up to reach the Ark!', {
+      fontSize: '15px', fontFamily: 'Arial',
+      fill: '#fffde7', stroke: '#1a5a90', strokeThickness: 3,
+      wordWrap: { width: 360 }, align: 'center',
+    }).setDepth(51).setOrigin(0.5);
+    this.tweens.add({ targets: inst, alpha: 0, delay: 4000, duration: 1500 });
+
+    // Water warning — bottom of screen, hidden by default
+    this.waterWarning = this.add.text(width / 2, height - 170, '🌊 WATER RISING!', {
+      fontSize: '22px', fontFamily: 'Arial', fontStyle: 'bold',
+      fill: '#00e5ff', stroke: '#003060', strokeThickness: 4,
+    }).setDepth(55).setOrigin(0.5).setAlpha(0);
+
+    // ── Event listeners ──────────────────────────────────────────────
+
+    this.gameScene.events.on('levelUpdate', (lvl) => {
+      this.levelLabel.setText(`Level ${lvl}`);
     });
 
-    // Listen for game events
-    this.gameScene.events.on('levelUpdate', (level) => {
-      this.levelLabel.setText(`Level: ${level}`);
+    this.gameScene.events.on('scoreUpdate', (score) => {
+      this.scoreLabel.setText(`Score: ${score}`);
+      this.tweens.add({ targets: this.scoreLabel, scaleX: 1.2, scaleY: 1.2, duration: 100, yoyo: true });
     });
 
     this.gameScene.events.on('livesUpdate', (lives) => {
-      this.hearts.forEach((h, i) => {
-        h.setAlpha(i < lives ? 1.0 : 0.25);
-      });
-      // Pulse remaining hearts
+      this.hearts.forEach((h, i) => h.setAlpha(i < lives ? 1.0 : 0.25));
       if (lives > 0) {
-        this.tweens.add({
-          targets: this.hearts[lives - 1],
-          scaleX: 1.4,
-          scaleY: 1.4,
-          duration: 120,
-          yoyo: true,
-        });
+        this.tweens.add({ targets: this.hearts[lives - 1], scaleX: 1.4, scaleY: 1.4, duration: 120, yoyo: true });
       }
     });
 
     this.gameScene.events.on('heightUpdate', (progress) => {
-      const fillH = this._barHeight * progress;
-      this.progressBarBg.height = fillH;
+      this.progressBar.height = this._barH * progress;
+    });
+
+    this.gameScene.events.on('waterUpdate', (danger) => {
+      // Show warning when water is getting close (danger > 0.3)
+      if (danger > 0.3) {
+        const a = Phaser.Math.Clamp((danger - 0.3) / 0.7, 0, 1);
+        this.waterWarning.setAlpha(a);
+        // Pulse faster as danger increases
+        if (!this.waterWarning.pulseTween || !this.waterWarning.pulseTween.isPlaying()) {
+          this.waterWarning.pulseTween = this.tweens.add({
+            targets: this.waterWarning,
+            scaleX: 1.08, scaleY: 1.08,
+            duration: Math.max(200, 500 - danger * 400),
+            yoyo: true, repeat: 0,
+          });
+        }
+      } else {
+        this.waterWarning.setAlpha(0);
+      }
     });
   }
 }
