@@ -155,7 +155,7 @@ export default class GameScene extends Phaser.Scene {
     // Randomly assign moving / crumble types (skip first & last)
     const eligible = [];
     for (let i = 1; i < platData.length - 1; i++) eligible.push(i);
-    const shuffled = Phaser.Utils.Array.Shuffle([...eligible]);
+    const shuffled = [...eligible].sort(() => Math.random() - 0.5);
     const movingSet  = new Set(shuffled.slice(0, ld.movingCount));
     const crumbleSet = new Set(shuffled.slice(ld.movingCount, ld.movingCount + ld.crumbleCount));
 
@@ -215,7 +215,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   _placeAnimalOn(px, py) {
-    const type   = Phaser.Utils.Array.GetRandom(ANIMALS);
+    const type   = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
     const animal = this.animalGroup.create(px, py - 30, type);
     animal.setScale(0.78).setDepth(4);
     animal.setAllowGravity(false);

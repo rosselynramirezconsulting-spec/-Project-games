@@ -81,23 +81,22 @@ export default class UIScene extends Phaser.Scene {
       this.progressBar.height = this._barH * progress;
     });
 
+    this._lastDanger = 0;
     this.gameScene.events.on('waterUpdate', (danger) => {
-      // Show warning when water is getting close (danger > 0.3)
       if (danger > 0.3) {
-        const a = Phaser.Math.Clamp((danger - 0.3) / 0.7, 0, 1);
-        this.waterWarning.setAlpha(a);
-        // Pulse faster as danger increases
-        if (!this.waterWarning.pulseTween || !this.waterWarning.pulseTween.isPlaying()) {
-          this.waterWarning.pulseTween = this.tweens.add({
+        this.waterWarning.setAlpha(Phaser.Math.Clamp((danger - 0.3) / 0.7, 0, 1));
+        // Pulse warning once each time danger crosses 0.5 threshold
+        if (danger > 0.5 && this._lastDanger <= 0.5) {
+          this.tweens.add({
             targets: this.waterWarning,
-            scaleX: 1.08, scaleY: 1.08,
-            duration: Math.max(200, 500 - danger * 400),
-            yoyo: true, repeat: 0,
+            scaleX: 1.15, scaleY: 1.15,
+            duration: 180, yoyo: true,
           });
         }
       } else {
         this.waterWarning.setAlpha(0);
       }
+      this._lastDanger = danger;
     });
   }
 }
