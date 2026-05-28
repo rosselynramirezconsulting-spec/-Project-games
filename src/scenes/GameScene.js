@@ -301,54 +301,74 @@ export default class GameScene extends Phaser.Scene {
     this.leftHeld  = false;
     this.rightHeld = false;
     this.jumpHeld  = false;
+    this.input.addPointer(2); // 3 simultaneous touches
 
-    // Allow left + right + jump simultaneously on mobile
-    this.input.addPointer(2);
+    const W = 390, H = 844, BY = H - 72;
 
-    const W = 390, H = 844;
-    const BAR_H = 118;
-    const CY    = H - BAR_H / 2;   // button center y
-
-    // Dark strip behind all buttons
-    this.add.rectangle(W / 2, H - BAR_H / 2, W, BAR_H, 0x000000, 0.5)
+    // Dark translucent strip
+    this.add.rectangle(W / 2, H - 70, W, 142, 0x000000, 0.44)
       .setScrollFactor(0).setDepth(29);
 
-    // Helper: styled button rectangle + label
-    const _btn = (cx, bw, baseColor, icon, iconSize) => {
-      const bg = this.add.rectangle(cx, CY, bw - 8, BAR_H - 12, baseColor, 0.9)
-        .setScrollFactor(0).setDepth(30).setInteractive();
-      // Top shine
-      this.add.rectangle(cx, CY - (BAR_H - 12) / 2 + 10, bw - 20, 14, 0xffffff, 0.14)
-        .setScrollFactor(0).setDepth(31);
-      // Icon
-      this.add.text(cx, CY + 2, icon, {
-        fontSize: iconSize || '46px', fontFamily: 'Arial',
-        fill: 'rgba(255,255,255,0.95)',
-      }).setOrigin(0.5).setScrollFactor(0).setDepth(32);
-      return bg;
+    // ── Draw 3D circle buttons via Graphics ───────────────────────────
+    const g = this.add.graphics().setScrollFactor(0).setDepth(30);
+
+    const drawBtn = (cx, cy, r, col) => {
+      g.fillStyle(0x000000, 0.38);
+      g.fillCircle(cx + 3, cy + 5, r);           // drop shadow
+      g.fillStyle(col, 0.92);
+      g.fillCircle(cx, cy, r);                    // body
+      g.fillStyle(0xffffff, 0.24);
+      g.fillEllipse(cx - r * 0.18, cy - r * 0.28, r * 1.1, r * 0.52); // gloss
+      g.fillStyle(0x000000, 0.16);
+      g.fillEllipse(cx, cy + r * 0.44, r * 1.55, r * 0.48); // bottom shade
     };
 
-    // ◀  ▶  on left half  |  ▲ JUMP on right half
-    const leftBtn  = _btn( 65, 122, 0x2d4080, '◀');
-    const rightBtn = _btn(195, 122, 0x2d4080, '▶');
-    const jumpBtn  = _btn(323, 148, 0xcc5200, '▲', '52px');
+    drawBtn( 68, BY, 50, 0x1a3a88);   // ◀
+    drawBtn(182, BY, 50, 0x1a3a88);   // ▶
+    drawBtn(316, BY, 62, 0xcc4200);   // JUMP  (bigger + orange)
 
-    // JUMP label below icon
-    this.add.text(323, CY + 30, 'JUMP', {
-      fontSize: '13px', fontFamily: 'Arial', fontStyle: 'bold',
-      fill: 'rgba(255,220,140,0.85)',
+    // ── Icons ─────────────────────────────────────────────────────────
+    const ico = (x, y, t, sz) => this.add.text(x, y, t, {
+      fontSize: sz || '42px', fontFamily: 'Arial', fontStyle: 'bold', fill: '#ffffff',
     }).setOrigin(0.5).setScrollFactor(0).setDepth(32);
 
-    // Bind press/release with visual feedback
-    const _bind = (btn, onDown, onUp, pressClr, baseClr) => {
-      btn.on('pointerdown',  () => { onDown(); btn.setFillStyle(pressClr, 0.98); });
-      btn.on('pointerup',    () => { onUp();   btn.setFillStyle(baseClr,  0.90); });
-      btn.on('pointerout',   () => { onUp();   btn.setFillStyle(baseClr,  0.90); });
+    ico( 68, BY - 1, '←');
+    ico(182, BY - 1, '→');
+    ico(316, BY - 6, '↑', '48px');
+    this.add.text(316, BY + 32, 'JUMP', {
+      fontSize: '12px', fontFamily: 'Arial', fontStyle: 'bold',
+      fill: 'rgba(255,215,130,0.85)',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(32);
+
+    // ── Press overlays (darken circle on tap) ─────────────────────────
+    const mkOverlay = (cx, cy, r) => {
+      const og = this.add.graphics().setScrollFactor(0).setDepth(33);
+      og.fillStyle(0x000000, 0.34);
+      og.fillCircle(cx, cy, r);
+      return og.setAlpha(0);
+    };
+    const lOvl = mkOverlay( 68, BY, 50);
+    const rOvl = mkOverlay(182, BY, 50);
+    const jOvl = mkOverlay(316, BY, 62);
+
+    // ── Invisible hit rectangles (larger than visual for easy tapping) ─
+    const mkHit = (cx, cy, s) => this.add.rectangle(cx, cy, s, s, 0xffffff, 0.001)
+      .setScrollFactor(0).setDepth(34).setInteractive();
+
+    const lHit = mkHit( 68, BY, 112);
+    const rHit = mkHit(182, BY, 112);
+    const jHit = mkHit(316, BY, 136);
+
+    // ── Bind ──────────────────────────────────────────────────────────
+    const bind = (hit, ovl, on, off) => {
+      hit.on('pointerdown', () => { on();  ovl.setAlpha(1); });
+      hit.on('pointerup',   () => { off(); ovl.setAlpha(0); });
+      hit.on('pointerout',  () => { off(); ovl.setAlpha(0); });
     };
 
-    _bind(leftBtn,  () => { this.leftHeld  = true;  }, () => { this.leftHeld  = false; }, 0x182850, 0x2d4080);
-    _bind(rightBtn, () => { this.rightHeld = true;  }, () => { this.rightHeld = false; }, 0x182850, 0x2d4080);
-    _bind(jumpBtn,  () => { this.jumpHeld  = true;  }, () => { this.jumpHeld  = false; }, 0x993300, 0xcc5200);
+    bind(lHit, lOvl, () => { this.leftHeld  = true;  }, () => { this.leftHeld  = false; });
+    bind(rHit, rOvl, () => { this.rightHeld = true;  }, () => { this.rightHeld = false; });
+    bind(jHit, jOvl, () => { this.jumpHeld  = true;  }, () => { this.jumpHeld  = false; });
   }
 
   // ── Death / Win ───────────────────────────────────────────────────────
