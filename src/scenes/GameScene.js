@@ -83,7 +83,8 @@ export default class GameScene extends Phaser.Scene {
 
     // Rising water — starts below the world, creeps upward
     this._waterLevel  = WORLD_H + 120;
-    this._waterSpeed  = 20 + this.level * 10; // px/s; lvl1=30, lvl5=70
+    this._waterPaused = false;
+    this._waterSpeed  = 10 + this.level * 5; // px/s; lvl1=15, lvl5=35
     const waterBlockH = 2400;
     this._waterGfx    = this.add.rectangle(195, this._waterLevel + waterBlockH / 2, 390, waterBlockH, 0x0d47a1, 0.82).setDepth(6);
     this._waterLine   = this.add.rectangle(195, this._waterLevel, 390, 10, 0x42a5f5, 0.95).setDepth(7);
@@ -336,21 +337,23 @@ export default class GameScene extends Phaser.Scene {
     this.lives--;
     this.events.emit('livesUpdate', this.lives);
     this.cameras.main.shake(300, 0.012);
-    this.sound.wrong();
+    this.sound.loseLife();
 
     if (this.lives <= 0) {
-      this.time.delayedCall(700, () => {
+      this.time.delayedCall(900, () => {
         this.scene.stop('UI');
         this.scene.start('Menu');
       });
     } else {
-      this.time.delayedCall(500, () => {
+      this._waterPaused = true; // freeze water while respawning
+      this.time.delayedCall(600, () => {
         this._dying = false;
         this.noah.setPosition(195, WORLD_H - 120);
         this.noah.setVelocity(0, 0);
         this.camMinScrollY = WORLD_H - 844;
-        // Reset water slightly — give player a small grace period
-        this._waterLevel  = Math.min(this._waterLevel + 180, WORLD_H + 120);
+        // Push water back 320px and give a 3s grace pause
+        this._waterLevel = Math.min(this._waterLevel + 320, WORLD_H + 120);
+        this.time.delayedCall(3000, () => { this._waterPaused = false; });
       });
     }
   }
@@ -438,8 +441,8 @@ export default class GameScene extends Phaser.Scene {
       plat.body.reset(plat.x, plat.y);
     });
 
-    // Rising water
-    this._waterLevel -= this._waterSpeed * dt;
+    // Rising water — paused during respawn grace period
+    if (!this._waterPaused) this._waterLevel -= this._waterSpeed * dt;
     const waterBlockH = 2400;
     this._waterGfx.setPosition(195, this._waterLevel + waterBlockH / 2);
     this._waterLine.setPosition(195, this._waterLevel);

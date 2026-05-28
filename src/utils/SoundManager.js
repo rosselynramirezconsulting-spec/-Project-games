@@ -84,6 +84,15 @@ export default class SoundManager {
     setTimeout(() => this._beep(180, 0.2, 'sawtooth', 0.15), 200);
   }
 
+  // Lost a life — descending chromatic jingle + low thud
+  loseLife() {
+    this._melody([
+      [440, 0], [392, 0.13], [349, 0.26],
+      [311, 0.40], [277, 0.55], [247, 0.72],
+    ], 0.18);
+    this._beep(85, 0.6, 'sawtooth', 0.30);
+  }
+
   // Victory fanfare
   win() {
     this._melody([
