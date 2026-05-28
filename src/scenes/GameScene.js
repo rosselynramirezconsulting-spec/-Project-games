@@ -354,13 +354,14 @@ export default class GameScene extends Phaser.Scene {
 
   // ── Controls ─────────────────────────────────────────────────────────
   _setupControls() {
-    this.cursors   = this.input.keyboard.createCursorKeys();
-    this.leftHeld  = false;
-    this.rightHeld = false;
-    this.jumpHeld  = false;
-    this.input.addPointer(2); // 3 simultaneous touches
+    this.cursors          = this.input.keyboard.createCursorKeys();
+    this.leftHeld         = false;
+    this.rightHeld        = false;
+    this._jumpLastPressed = -1000; // timestamp; consumed after use
+    this.input.addPointer(2);      // support 3 simultaneous touches
 
     const W = 390, H = 844, BY = H - 72;
+    this._ctrlTop = H - 142; // screen-y where control strip starts
 
     // Dark translucent strip
     this.add.rectangle(W / 2, H - 70, W, 142, 0x000000, 0.44)
@@ -371,18 +372,18 @@ export default class GameScene extends Phaser.Scene {
 
     const drawBtn = (cx, cy, r, col) => {
       g.fillStyle(0x000000, 0.38);
-      g.fillCircle(cx + 3, cy + 5, r);           // drop shadow
+      g.fillCircle(cx + 3, cy + 5, r);
       g.fillStyle(col, 0.92);
-      g.fillCircle(cx, cy, r);                    // body
+      g.fillCircle(cx, cy, r);
       g.fillStyle(0xffffff, 0.24);
-      g.fillEllipse(cx - r * 0.18, cy - r * 0.28, r * 1.1, r * 0.52); // gloss
+      g.fillEllipse(cx - r * 0.18, cy - r * 0.28, r * 1.1, r * 0.52);
       g.fillStyle(0x000000, 0.16);
-      g.fillEllipse(cx, cy + r * 0.44, r * 1.55, r * 0.48); // bottom shade
+      g.fillEllipse(cx, cy + r * 0.44, r * 1.55, r * 0.48);
     };
 
-    drawBtn( 68, BY, 50, 0x1a3a88);   // ◀
-    drawBtn(182, BY, 50, 0x1a3a88);   // ▶
-    drawBtn(316, BY, 62, 0xcc4200);   // JUMP  (bigger + orange)
+    drawBtn( 68, BY, 50, 0x1a3a88);
+    drawBtn(182, BY, 50, 0x1a3a88);
+    drawBtn(316, BY, 62, 0xcc4200);
 
     // ── Icons ─────────────────────────────────────────────────────────
     const ico = (x, y, t, sz) => this.add.text(x, y, t, {
@@ -397,43 +398,25 @@ export default class GameScene extends Phaser.Scene {
       fill: 'rgba(255,215,130,0.85)',
     }).setOrigin(0.5).setScrollFactor(0).setDepth(32);
 
-    // ── Press overlays (darken circle on tap) ─────────────────────────
-    const mkOverlay = (cx, cy, r) => {
+    // ── Press overlays — stored as instance vars so update() can drive them
+    const mkOvl = (cx, cy, r) => {
       const og = this.add.graphics().setScrollFactor(0).setDepth(33);
       og.fillStyle(0x000000, 0.34);
       og.fillCircle(cx, cy, r);
       return og.setAlpha(0);
     };
-    const lOvl = mkOverlay( 68, BY, 50);
-    const rOvl = mkOverlay(182, BY, 50);
-    const jOvl = mkOverlay(316, BY, 62);
+    this._lOvl = mkOvl( 68, BY, 50);
+    this._rOvl = mkOvl(182, BY, 50);
+    this._jOvl = mkOvl(316, BY, 62);
 
-    // ── Global multi-touch handler — reliable across simultaneous fingers ─
-    const CTRL_TOP = H - 142;          // top of control strip in screen coords
-    const ptMap    = new Map();        // pointerId → 'left' | 'right' | 'jump'
-    const getBtn   = (x) => x < 130 ? 'left' : x < 258 ? 'right' : 'jump';
-
-    const onDown = (ptr) => {
-      if (ptr.y < CTRL_TOP) return;
-      const btn = getBtn(ptr.x);
-      ptMap.set(ptr.id, btn);
-      if      (btn === 'left')  { this.leftHeld  = true;  lOvl.setAlpha(1); }
-      else if (btn === 'right') { this.rightHeld = true;  rOvl.setAlpha(1); }
-      else                      { this.jumpHeld  = true;  jOvl.setAlpha(1); }
-    };
-
-    const onUp = (ptr) => {
-      const btn = ptMap.get(ptr.id);
-      if (!btn) return;
-      ptMap.delete(ptr.id);
-      if      (btn === 'left')  { this.leftHeld  = false; lOvl.setAlpha(0); }
-      else if (btn === 'right') { this.rightHeld = false; rOvl.setAlpha(0); }
-      else                      { this.jumpHeld  = false; jOvl.setAlpha(0); }
-    };
-
-    this.input.on('pointerdown', onDown, this);
-    this.input.on('pointerup',   onUp,   this);
-    this.input.on('pointerout',  onUp,   this);
+    // ── Jump: one event listener just records a timestamp ─────────────
+    // Left/Right state is polled each frame in update() — never goes stale.
+    // Jump uses a 300 ms buffer so pressing slightly before landing still fires.
+    this.input.on('pointerdown', (ptr) => {
+      if (ptr.y >= this._ctrlTop && ptr.x >= 258) {
+        this._jumpLastPressed = this.time.now;
+      }
+    }, this);
   }
 
   // ── Death / Win ───────────────────────────────────────────────────────
@@ -513,15 +496,32 @@ export default class GameScene extends Phaser.Scene {
     const noah = this.noah;
     const dt   = delta / 1000;
 
+    // Poll all active touch pointers for left/right and jump overlay.
+    // This is more reliable than event-based state — never goes stale.
+    this.leftHeld  = false;
+    this.rightHeld = false;
+    let jTouched   = false;
+    const ct = this._ctrlTop || 702;
+    [this.input.pointer1, this.input.pointer2, this.input.pointer3].forEach((p) => {
+      if (!p || !p.isDown || p.y < ct) return;
+      if      (p.x < 130) this.leftHeld  = true;
+      else if (p.x < 258) this.rightHeld = true;
+      else                 jTouched = true;
+    });
+    if (this._lOvl) this._lOvl.setAlpha(this.leftHeld  ? 1 : 0);
+    if (this._rOvl) this._rOvl.setAlpha(this.rightHeld ? 1 : 0);
+    if (this._jOvl) this._jOvl.setAlpha(jTouched ? 1 : 0);
+
     // Horizontal movement
     noah.setVelocityX(0);
     if (this.cursors.left.isDown  || this.leftHeld)  { noah.setVelocityX(-NOAH_SPEED); noah.setFlipX(true);  }
     else if (this.cursors.right.isDown || this.rightHeld) { noah.setVelocityX(NOAH_SPEED); noah.setFlipX(false); }
 
-    // Jump
-    if ((this.cursors.up.isDown || this.jumpHeld) && noah.body.blocked.down) {
+    // Jump — 300 ms buffer: pressing just before landing still fires once
+    const jumpReady = this.cursors.up.isDown || (time - this._jumpLastPressed < 300);
+    if (jumpReady && noah.body.blocked.down) {
       noah.setVelocityY(JUMP_FORCE);
-      this.jumpHeld = false;
+      this._jumpLastPressed = -1000; // consumed
       this.sound.collect();
     }
 
