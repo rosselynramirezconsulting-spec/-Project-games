@@ -302,32 +302,53 @@ export default class GameScene extends Phaser.Scene {
     this.rightHeld = false;
     this.jumpHeld  = false;
 
-    const screenW = 390;
-    const screenH = 844;
-    const zoneH   = 160;
+    // Allow left + right + jump simultaneously on mobile
+    this.input.addPointer(2);
 
-    const leftZone  = this.add.rectangle(0,              screenH - zoneH, screenW * 0.3, zoneH, 0xffffff, 0.08)
-      .setOrigin(0, 0).setDepth(30).setScrollFactor(0).setInteractive();
-    const rightZone = this.add.rectangle(screenW * 0.3,  screenH - zoneH, screenW * 0.4, zoneH, 0xffffff, 0.08)
-      .setOrigin(0, 0).setDepth(30).setScrollFactor(0).setInteractive();
-    const jumpZone  = this.add.rectangle(screenW * 0.7,  screenH - zoneH, screenW * 0.3, zoneH, 0xffffff, 0.08)
-      .setOrigin(0, 0).setDepth(30).setScrollFactor(0).setInteractive();
+    const W = 390, H = 844;
+    const BAR_H = 118;
+    const CY    = H - BAR_H / 2;   // button center y
 
-    [['◀', screenW * 0.15], ['▶', screenW * 0.5], ['▲', screenW * 0.85]].forEach(([label, lx]) => {
-      this.add.text(lx, screenH - 55, label, {
-        fontSize: '36px', fill: 'rgba(255,255,255,0.55)', fontFamily: 'Arial',
-      }).setOrigin(0.5).setDepth(31).setScrollFactor(0);
-    });
+    // Dark strip behind all buttons
+    this.add.rectangle(W / 2, H - BAR_H / 2, W, BAR_H, 0x000000, 0.5)
+      .setScrollFactor(0).setDepth(29);
 
-    leftZone.on('pointerdown',  () => { this.leftHeld  = true;  });
-    leftZone.on('pointerup',    () => { this.leftHeld  = false; });
-    leftZone.on('pointerout',   () => { this.leftHeld  = false; });
-    rightZone.on('pointerdown', () => { this.rightHeld = true;  });
-    rightZone.on('pointerup',   () => { this.rightHeld = false; });
-    rightZone.on('pointerout',  () => { this.rightHeld = false; });
-    jumpZone.on('pointerdown',  () => { this.jumpHeld  = true;  });
-    jumpZone.on('pointerup',    () => { this.jumpHeld  = false; });
-    jumpZone.on('pointerout',   () => { this.jumpHeld  = false; });
+    // Helper: styled button rectangle + label
+    const _btn = (cx, bw, baseColor, icon, iconSize) => {
+      const bg = this.add.rectangle(cx, CY, bw - 8, BAR_H - 12, baseColor, 0.9)
+        .setScrollFactor(0).setDepth(30).setInteractive();
+      // Top shine
+      this.add.rectangle(cx, CY - (BAR_H - 12) / 2 + 10, bw - 20, 14, 0xffffff, 0.14)
+        .setScrollFactor(0).setDepth(31);
+      // Icon
+      this.add.text(cx, CY + 2, icon, {
+        fontSize: iconSize || '46px', fontFamily: 'Arial',
+        fill: 'rgba(255,255,255,0.95)',
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(32);
+      return bg;
+    };
+
+    // ◀  ▶  on left half  |  ▲ JUMP on right half
+    const leftBtn  = _btn( 65, 122, 0x2d4080, '◀');
+    const rightBtn = _btn(195, 122, 0x2d4080, '▶');
+    const jumpBtn  = _btn(323, 148, 0xcc5200, '▲', '52px');
+
+    // JUMP label below icon
+    this.add.text(323, CY + 30, 'JUMP', {
+      fontSize: '13px', fontFamily: 'Arial', fontStyle: 'bold',
+      fill: 'rgba(255,220,140,0.85)',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(32);
+
+    // Bind press/release with visual feedback
+    const _bind = (btn, onDown, onUp, pressClr, baseClr) => {
+      btn.on('pointerdown',  () => { onDown(); btn.setFillStyle(pressClr, 0.98); });
+      btn.on('pointerup',    () => { onUp();   btn.setFillStyle(baseClr,  0.90); });
+      btn.on('pointerout',   () => { onUp();   btn.setFillStyle(baseClr,  0.90); });
+    };
+
+    _bind(leftBtn,  () => { this.leftHeld  = true;  }, () => { this.leftHeld  = false; }, 0x182850, 0x2d4080);
+    _bind(rightBtn, () => { this.rightHeld = true;  }, () => { this.rightHeld = false; }, 0x182850, 0x2d4080);
+    _bind(jumpBtn,  () => { this.jumpHeld  = true;  }, () => { this.jumpHeld  = false; }, 0x993300, 0xcc5200);
   }
 
   // ── Death / Win ───────────────────────────────────────────────────────
