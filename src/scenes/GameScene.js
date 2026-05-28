@@ -408,24 +408,32 @@ export default class GameScene extends Phaser.Scene {
     const rOvl = mkOverlay(182, BY, 50);
     const jOvl = mkOverlay(316, BY, 62);
 
-    // ── Invisible hit rectangles (larger than visual for easy tapping) ─
-    const mkHit = (cx, cy, s) => this.add.rectangle(cx, cy, s, s, 0xffffff, 0.001)
-      .setScrollFactor(0).setDepth(34).setInteractive();
+    // ── Global multi-touch handler — reliable across simultaneous fingers ─
+    const CTRL_TOP = H - 142;          // top of control strip in screen coords
+    const ptMap    = new Map();        // pointerId → 'left' | 'right' | 'jump'
+    const getBtn   = (x) => x < 130 ? 'left' : x < 258 ? 'right' : 'jump';
 
-    const lHit = mkHit( 68, BY, 112);
-    const rHit = mkHit(182, BY, 112);
-    const jHit = mkHit(316, BY, 136);
-
-    // ── Bind ──────────────────────────────────────────────────────────
-    const bind = (hit, ovl, on, off) => {
-      hit.on('pointerdown', () => { on();  ovl.setAlpha(1); });
-      hit.on('pointerup',   () => { off(); ovl.setAlpha(0); });
-      hit.on('pointerout',  () => { off(); ovl.setAlpha(0); });
+    const onDown = (ptr) => {
+      if (ptr.y < CTRL_TOP) return;
+      const btn = getBtn(ptr.x);
+      ptMap.set(ptr.id, btn);
+      if      (btn === 'left')  { this.leftHeld  = true;  lOvl.setAlpha(1); }
+      else if (btn === 'right') { this.rightHeld = true;  rOvl.setAlpha(1); }
+      else                      { this.jumpHeld  = true;  jOvl.setAlpha(1); }
     };
 
-    bind(lHit, lOvl, () => { this.leftHeld  = true;  }, () => { this.leftHeld  = false; });
-    bind(rHit, rOvl, () => { this.rightHeld = true;  }, () => { this.rightHeld = false; });
-    bind(jHit, jOvl, () => { this.jumpHeld  = true;  }, () => { this.jumpHeld  = false; });
+    const onUp = (ptr) => {
+      const btn = ptMap.get(ptr.id);
+      if (!btn) return;
+      ptMap.delete(ptr.id);
+      if      (btn === 'left')  { this.leftHeld  = false; lOvl.setAlpha(0); }
+      else if (btn === 'right') { this.rightHeld = false; rOvl.setAlpha(0); }
+      else                      { this.jumpHeld  = false; jOvl.setAlpha(0); }
+    };
+
+    this.input.on('pointerdown', onDown, this);
+    this.input.on('pointerup',   onUp,   this);
+    this.input.on('pointerout',  onUp,   this);
   }
 
   // ── Death / Win ───────────────────────────────────────────────────────
@@ -553,9 +561,14 @@ export default class GameScene extends Phaser.Scene {
       this.handleDeath();
     }
 
-    // Camera — only scroll upward; clamp allows starting below default viewport
+    // Camera — ratchet up when Noah climbs; safety follow when Noah falls near controls
     const targetY = noah.y - 580;
     if (targetY < this.camMinScrollY) this.camMinScrollY = targetY;
+    // If Noah falls to screen-y > 600 (near control strip), let camera follow down
+    const safetyY = noah.y - 600;
+    if (safetyY > this.camMinScrollY) {
+      this.camMinScrollY = Phaser.Math.Clamp(safetyY, 0, WORLD_H - 702);
+    }
     this.cameras.main.scrollY += (this.camMinScrollY - this.cameras.main.scrollY) * 0.06;
     this.cameras.main.scrollY = Phaser.Math.Clamp(this.cameras.main.scrollY, 0, WORLD_H - 702);
 
