@@ -68,8 +68,10 @@ export default class GameScene extends Phaser.Scene {
 
     this._addClouds();
 
+    this._animalsCollected = 0;
+
     // Ark near top
-    this.add.image(195, ARK_Y, 'ark').setScale(1.6).setDepth(3);
+    this.arkImage = this.add.image(195, ARK_Y, 'ark').setScale(1.6).setDepth(3);
 
     // Platform groups
     this.staticPlatGroup  = this.physics.add.staticGroup();
@@ -248,6 +250,7 @@ export default class GameScene extends Phaser.Scene {
   _onCollectAnimal(noah, animal) {
     animal.destroy();
     this.score += 25;
+    this._animalsCollected++;
     this.sound.collect();
     this._showFloatText(noah.x, noah.y - 32, '+25 🐾', '#ffe066');
     this.events.emit('scoreUpdate', this.score);
@@ -355,11 +358,41 @@ export default class GameScene extends Phaser.Scene {
   handleWin() {
     if (this._won) return;
     this._won = true;
+    this._waterSpeed = 0; // flood stops!
     this.score += 100 + this.lives * 50;
     this.sound.win();
-    this.time.delayedCall(400, () => {
-      this.scene.stop('UI');
-      this.scene.start('Win', { level: this.level, score: this.score });
+
+    // Open the ark door
+    this.arkImage.setTexture('ark-open');
+
+    // Disable physics so we can freely tween Noah into the ark
+    this.noah.body.enable = false;
+    this.tweens.add({
+      targets: this.noah,
+      x: 195, y: ARK_Y + 22,
+      duration: 700,
+      ease: 'Power2',
+      onComplete: () => {
+        this.noah.setVisible(false);
+        // Ark bounces in celebration
+        this.tweens.add({
+          targets: this.arkImage,
+          y: ARK_Y - 12,
+          duration: 130,
+          yoyo: true,
+          repeat: 5,
+          onComplete: () => {
+            this.time.delayedCall(350, () => {
+              this.scene.stop('UI');
+              this.scene.start('Win', {
+                level: this.level,
+                score: this.score,
+                animalsCollected: this._animalsCollected,
+              });
+            });
+          },
+        });
+      },
     });
   }
 

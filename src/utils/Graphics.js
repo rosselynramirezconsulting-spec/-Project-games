@@ -297,6 +297,40 @@ export function drawIcePlatform(g) {
   for (let x = 16; x < 96; x += 16) g.lineBetween(x, 0, x, 18);
 }
 
+export function drawArkOpen(g) {
+  // Hull
+  g.fillStyle(0x8B4513);
+  g.fillRect(0, 50, 120, 50);
+  g.fillTriangle(0, 50, 0, 100, 20, 100);
+  g.fillTriangle(120, 50, 120, 100, 100, 100);
+  g.fillStyle(0xa0522d);
+  g.fillRect(5, 55, 110, 40);
+
+  // Cabin
+  g.fillStyle(0xcd853f);
+  g.fillRect(20, 20, 80, 35);
+  g.fillRect(35, 5, 50, 20);
+
+  // Roof
+  g.fillStyle(0x8B0000);
+  g.fillTriangle(15, 20, 105, 20, 60, 2);
+
+  // Side windows
+  g.fillStyle(0x87CEEB);
+  g.fillRect(28, 28, 14, 12);
+  g.fillRect(78, 28, 14, 12);
+
+  // Open door — warm golden light
+  g.fillStyle(0xffdd44);
+  g.fillRect(48, 22, 24, 33);
+  g.fillStyle(0xff9900, 0.6);
+  g.fillRect(51, 25, 18, 26);
+
+  // Wood planks on hull
+  g.lineStyle(1, 0x5c3200, 0.5);
+  for (let x = 15; x < 120; x += 15) g.lineBetween(x, 50, x, 100);
+}
+
 export function drawHeart(g) {
   g.fillStyle(0xff3333);
   g.fillCircle(7, 7, 6);
