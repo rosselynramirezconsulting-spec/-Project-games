@@ -104,8 +104,8 @@ export default class GameScene extends Phaser.Scene {
     // Animal collection
     this.physics.add.overlap(this.noah, this.animalGroup, this._onCollectAnimal, null, this);
 
-    // Camera
-    this.camMinScrollY = WORLD_H - 844;
+    // Camera — start high enough so Noah is above the control buttons (bottom 142px)
+    this.camMinScrollY = WORLD_H - 702;
 
     // Rain density increases per level
     this.rainGroup = this.add.group();
@@ -147,39 +147,46 @@ export default class GameScene extends Phaser.Scene {
     const texKey = this.level >= 3 ? 'iceplatform' : 'platform';
     const platData = [];
 
-    // Bottom start platform
-    platData.push({ x: 195, y: WORLD_H - 60, w: 200, type: 'static' });
+    // Wide ground platform
+    platData.push({ x: 195, y: WORLD_H - 60, w: 300, type: 'static' });
 
-    let prevX = 195;
     let prevY = WORLD_H - 60;
 
+    // Two-column layout: left lane (x≈55-145) + right lane (x≈245-335)
     for (let i = 0; i < ld.platCount; i++) {
-      const gap = Phaser.Math.Between(ld.gapMin, ld.gapMax);
+      const gap = Phaser.Math.Between(ld.gapMin - 10, ld.gapMax - 10);
       const y   = prevY - gap;
       if (y < ARK_Y + 120) break;
 
-      // Clamp horizontal offset to ±MAX_HORIZ so every jump is reachable
-      const dx = Phaser.Math.Between(-MAX_HORIZ, MAX_HORIZ);
-      const x  = Phaser.Math.Clamp(prevX + dx, 45, 345);
-      const w  = Phaser.Math.Between(ld.minW, ld.maxW);
+      const w = Phaser.Math.Between(ld.minW + 10, ld.maxW + 10);
 
-      platData.push({ x, y, w, type: 'static' });
-      prevX = x;
+      // Left column platform
+      platData.push({ x: Phaser.Math.Between(55, 140), y, w, type: 'static' });
+      // Right column platform (slight y offset for variety)
+      platData.push({
+        x: Phaser.Math.Between(248, 335),
+        y: y + Phaser.Math.Between(-22, 22),
+        w,
+        type: 'static',
+      });
+
       prevY = y;
     }
 
     // Top platform under Ark
-    platData.push({ x: 195, y: ARK_Y + 80, w: 160, type: 'static' });
+    platData.push({ x: 195, y: ARK_Y + 80, w: 180, type: 'static' });
 
-    // Randomly assign moving / crumble types (skip first & last)
+    // Assign types — guarantee at least 5 moving platforms from level 1
     const eligible = [];
     for (let i = 1; i < platData.length - 1; i++) eligible.push(i);
-    const shuffled = [...eligible].sort(() => Math.random() - 0.5);
-    const movingSet  = new Set(shuffled.slice(0, ld.movingCount));
-    const crumbleSet = new Set(shuffled.slice(ld.movingCount, ld.movingCount + ld.crumbleCount));
+    const shuffled     = [...eligible].sort(() => Math.random() - 0.5);
+    const movingCount  = Math.max(ld.movingCount, 5);
+    const crumbleCount = ld.crumbleCount;
+    const movingSet    = new Set(shuffled.slice(0, movingCount));
+    const crumbleSet   = new Set(shuffled.slice(movingCount, movingCount + crumbleCount));
 
     platData.forEach((p, idx) => {
-      if (movingSet.has(idx))  p.type = 'moving';
+      if (movingSet.has(idx))       p.type = 'moving';
       else if (crumbleSet.has(idx)) p.type = 'crumble';
     });
 
@@ -193,8 +200,7 @@ export default class GameScene extends Phaser.Scene {
       } else if (p.type === 'crumble') {
         const img = this.crumblePlatGroup.create(p.x, p.y, texKey);
         img.setDisplaySize(p.w, 18).refreshBody();
-        // Red tint so player can tell it's crumbling type
-        img.setTint(0xff9966);
+        img.setTint(0xff9966); // orange-red tint = crumbles
         img.crumbleState = 'normal';
 
       } else if (p.type === 'moving') {
@@ -202,12 +208,11 @@ export default class GameScene extends Phaser.Scene {
           .setDisplaySize(p.w, 18);
         img.setImmovable(true);
         img.body.allowGravity = false;
-        // Blue tint so player can tell it moves
-        img.setTint(0x66ccff);
+        img.setTint(0x66ccff); // blue tint = moves
         const spd = Phaser.Math.Between(55, 105) * (Math.random() < 0.5 ? 1 : -1);
         img.setVelocityX(spd);
-        img.minX = Math.max(45,  p.x - 85);
-        img.maxX = Math.min(345, p.x + 85);
+        img.minX = Math.max(45,  p.x - 90);
+        img.maxX = Math.min(345, p.x + 90);
         this.movingPlatGroup.add(img);
         this._movingPlats.push(img);
       }
@@ -391,7 +396,7 @@ export default class GameScene extends Phaser.Scene {
         this._dying = false;
         this.noah.setPosition(195, WORLD_H - 120);
         this.noah.setVelocity(0, 0);
-        this.camMinScrollY = WORLD_H - 844;
+        this.camMinScrollY = WORLD_H - 702;
         // Push water back 320px and give a 3s grace pause
         this._waterLevel = Math.min(this._waterLevel + 320, WORLD_H + 120);
         this.time.delayedCall(3000, () => { this._waterPaused = false; });
@@ -494,11 +499,11 @@ export default class GameScene extends Phaser.Scene {
       this.handleDeath();
     }
 
-    // Camera — only scroll upward
-    const targetY = noah.y - 560;
+    // Camera — only scroll upward; clamp allows starting below default viewport
+    const targetY = noah.y - 580;
     if (targetY < this.camMinScrollY) this.camMinScrollY = targetY;
     this.cameras.main.scrollY += (this.camMinScrollY - this.cameras.main.scrollY) * 0.06;
-    this.cameras.main.scrollY = Phaser.Math.Clamp(this.cameras.main.scrollY, 0, WORLD_H - 844);
+    this.cameras.main.scrollY = Phaser.Math.Clamp(this.cameras.main.scrollY, 0, WORLD_H - 702);
 
     // Rain cleanup
     this.rainGroup.getChildren().forEach((drop) => {
