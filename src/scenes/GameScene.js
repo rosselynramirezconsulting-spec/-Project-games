@@ -104,10 +104,12 @@ export default class GameScene extends Phaser.Scene {
     this.noah.setCollideWorldBounds(true);
 
     // Colliders
-    this.physics.add.collider(this.noah, this.staticPlatGroup);
-    this.physics.add.collider(this.noah, this.movingPlatGroup);
-    this.physics.add.collider(this.noah, this.crumblePlatGroup, this._onCrumbleCollide, null, this);
-    this.physics.add.collider(this.noah, this.bouncePlatGroup,  this._onBounceCollide,  null, this);
+    // One-way platforms: Noah passes through from below, only lands from above
+    const _fromAbove = (noah) => noah.body.velocity.y >= 0;
+    this.physics.add.collider(this.noah, this.staticPlatGroup,  null,                      _fromAbove, this);
+    this.physics.add.collider(this.noah, this.movingPlatGroup,  null,                      _fromAbove, this);
+    this.physics.add.collider(this.noah, this.crumblePlatGroup, this._onCrumbleCollide,    _fromAbove, this);
+    this.physics.add.collider(this.noah, this.bouncePlatGroup,  this._onBounceCollide,     _fromAbove, this);
 
     // Animal collection
     this.physics.add.overlap(this.noah, this.animalGroup, this._onCollectAnimal, null, this);
