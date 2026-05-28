@@ -517,8 +517,8 @@ export default class GameScene extends Phaser.Scene {
     if (this.cursors.left.isDown  || this.leftHeld)  { noah.setVelocityX(-NOAH_SPEED); noah.setFlipX(true);  }
     else if (this.cursors.right.isDown || this.rightHeld) { noah.setVelocityX(NOAH_SPEED); noah.setFlipX(false); }
 
-    // Jump — 300 ms buffer: pressing just before landing still fires once
-    const jumpReady = this.cursors.up.isDown || (time - this._jumpLastPressed < 300);
+    // Jump — held finger auto-jumps on landing; quick tap gives 300 ms buffer
+    const jumpReady = this.cursors.up.isDown || jTouched || (time - this._jumpLastPressed < 300);
     if (jumpReady && noah.body.blocked.down) {
       noah.setVelocityY(JUMP_FORCE);
       this._jumpLastPressed = -1000; // consumed
