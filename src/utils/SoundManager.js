@@ -102,8 +102,49 @@ export default class SoundManager {
     ], 0.2);
   }
 
+  // Bouncy platform — spring boing
+  bounce() {
+    this._melody([[349, 0], [523, 0.09], [784, 0.18], [1047, 0.27]], 0.12);
+  }
+
   // Button tap
   tap() {
     this._beep(880, 0.06, 'sine', 0.15);
+  }
+
+  // ── Background music ────────────────────────────────────────────────
+  startMusic() {
+    if (this._musicOn) return;
+    this._musicOn = true;
+    try {
+      const ctx  = this._getCtx();
+      // Happy pentatonic loop: G A C D E C D G
+      const seq  = [392, 440, 523, 587, 659, 523, 587, 392, 440, 523, 659, 784, 659, 523, 440, 392];
+      const step = 0.26; // seconds per note
+      const loopDur = seq.length * step;
+      let next = ctx.currentTime + 0.05;
+
+      const schedLoop = () => {
+        if (!this._musicOn) return;
+        seq.forEach((freq, i) => {
+          const t = next + i * step;
+          const o = ctx.createOscillator(), g = ctx.createGain();
+          o.connect(g); g.connect(ctx.destination);
+          o.type = 'sine';
+          o.frequency.setValueAtTime(freq, t);
+          g.gain.setValueAtTime(0.07, t);
+          g.gain.exponentialRampToValueAtTime(0.001, t + step * 0.8);
+          o.start(t); o.stop(t + step);
+        });
+        next += loopDur;
+        this._musicTimer = setTimeout(schedLoop, (loopDur - 0.15) * 1000);
+      };
+      schedLoop();
+    } catch (_) {}
+  }
+
+  stopMusic() {
+    this._musicOn = false;
+    clearTimeout(this._musicTimer);
   }
 }

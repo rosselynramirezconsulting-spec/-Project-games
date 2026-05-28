@@ -11,22 +11,27 @@ const ARK_Y      = 100;
 const MAX_HORIZ = 100;
 
 const LEVELS = [
-  { platCount: 24, minW: 88, maxW: 110, movingCount: 0,  crumbleCount: 0, gapMin: 100, gapMax: 130 },
-  { platCount: 21, minW: 74, maxW: 100, movingCount: 4,  crumbleCount: 0, gapMin: 110, gapMax: 145 },
-  { platCount: 19, minW: 62, maxW: 90,  movingCount: 6,  crumbleCount: 3, gapMin: 120, gapMax: 158 },
-  { platCount: 17, minW: 54, maxW: 80,  movingCount: 8,  crumbleCount: 5, gapMin: 132, gapMax: 170 },
-  { platCount: 14, minW: 48, maxW: 68,  movingCount: 10, crumbleCount: 7, gapMin: 144, gapMax: 182 },
+  { platCount: 20, minW: 88, maxW: 110, movingCount: 0,  crumbleCount: 0, bounceCount: 0, gapMin: 100, gapMax: 130 },
+  { platCount: 18, minW: 74, maxW: 100, movingCount: 4,  crumbleCount: 0, bounceCount: 2, gapMin: 110, gapMax: 145 },
+  { platCount: 16, minW: 62, maxW: 90,  movingCount: 6,  crumbleCount: 3, bounceCount: 3, gapMin: 120, gapMax: 158 },
+  { platCount: 14, minW: 54, maxW: 80,  movingCount: 8,  crumbleCount: 5, bounceCount: 4, gapMin: 132, gapMax: 170 },
+  { platCount: 12, minW: 48, maxW: 68,  movingCount: 10, crumbleCount: 7, bounceCount: 5, gapMin: 144, gapMax: 182 },
+  { platCount: 11, minW: 44, maxW: 62,  movingCount: 12, crumbleCount: 8, bounceCount: 5, gapMin: 150, gapMax: 190 },
+  { platCount: 10, minW: 40, maxW: 56,  movingCount: 14, crumbleCount: 9, bounceCount: 6, gapMin: 156, gapMax: 196 },
+  { platCount: 9,  minW: 38, maxW: 52,  movingCount: 16, crumbleCount:10, bounceCount: 7, gapMin: 162, gapMax: 202 },
 ];
 
 const ANIMALS = ['elephant', 'giraffe', 'lion', 'zebra', 'monkey', 'rabbit', 'penguin', 'bear'];
 
 function getLevelData(level) {
-  if (level <= 5) return LEVELS[level - 1];
-  const base = Object.assign({}, LEVELS[4]);
-  const extra = level - 5;
-  base.movingCount = LEVELS[4].movingCount + extra;
-  base.gapMin = LEVELS[4].gapMin + extra * 8;
-  base.gapMax = LEVELS[4].gapMax + extra * 8;
+  if (level <= 8) return LEVELS[level - 1];
+  const base = Object.assign({}, LEVELS[7]);
+  const extra = level - 8;
+  base.movingCount  = LEVELS[7].movingCount  + extra * 2;
+  base.crumbleCount = LEVELS[7].crumbleCount + extra;
+  base.bounceCount  = LEVELS[7].bounceCount  + extra;
+  base.gapMin = LEVELS[7].gapMin + extra * 6;
+  base.gapMax = LEVELS[7].gapMax + extra * 6;
   return base;
 }
 
@@ -58,7 +63,8 @@ export default class GameScene extends Phaser.Scene {
 
   _createGame() {
     this.physics.world.setBounds(0, 0, 390, WORLD_H);
-    this.cameras.main.setBounds(0, 0, 390, WORLD_H);
+    // Extend camera bounds 142px below world so Noah clears the control buttons
+    this.cameras.main.setBounds(0, 0, 390, WORLD_H + 142);
     this.cameras.main.setBackgroundColor('#87CEEB');
 
     // Altitude zone tints
@@ -77,6 +83,7 @@ export default class GameScene extends Phaser.Scene {
     this.staticPlatGroup  = this.physics.add.staticGroup();
     this.movingPlatGroup  = this.physics.add.group();
     this.crumblePlatGroup = this.physics.add.staticGroup();
+    this.bouncePlatGroup  = this.physics.add.staticGroup();
 
     this._generatePlatforms();
     this._spawnAnimals();
@@ -100,6 +107,7 @@ export default class GameScene extends Phaser.Scene {
     this.physics.add.collider(this.noah, this.staticPlatGroup);
     this.physics.add.collider(this.noah, this.movingPlatGroup);
     this.physics.add.collider(this.noah, this.crumblePlatGroup, this._onCrumbleCollide, null, this);
+    this.physics.add.collider(this.noah, this.bouncePlatGroup,  this._onBounceCollide,  null, this);
 
     // Animal collection
     this.physics.add.overlap(this.noah, this.animalGroup, this._onCollectAnimal, null, this);
@@ -115,6 +123,10 @@ export default class GameScene extends Phaser.Scene {
       callbackScope: this,
       loop: true,
     });
+
+    this._hBand = -1; // altitude color band tracker
+    this.sound.startMusic();
+    this.events.once('shutdown', () => this.sound.stopMusic(), this);
 
     this._setupControls();
     this.scene.launch('UI', { gameScene: this });
@@ -182,12 +194,16 @@ export default class GameScene extends Phaser.Scene {
     const shuffled     = [...eligible].sort(() => Math.random() - 0.5);
     const movingCount  = Math.max(ld.movingCount, 5);
     const crumbleCount = ld.crumbleCount;
-    const movingSet    = new Set(shuffled.slice(0, movingCount));
-    const crumbleSet   = new Set(shuffled.slice(movingCount, movingCount + crumbleCount));
+    const bounceCount  = ld.bounceCount || 0;
+    let   offset       = 0;
+    const movingSet  = new Set(shuffled.slice(offset, offset += movingCount));
+    const crumbleSet = new Set(shuffled.slice(offset, offset += crumbleCount));
+    const bounceSet  = new Set(shuffled.slice(offset, offset += bounceCount));
 
     platData.forEach((p, idx) => {
       if (movingSet.has(idx))       p.type = 'moving';
       else if (crumbleSet.has(idx)) p.type = 'crumble';
+      else if (bounceSet.has(idx))  p.type = 'bounce';
     });
 
     this._movingPlats = [];
@@ -200,8 +216,13 @@ export default class GameScene extends Phaser.Scene {
       } else if (p.type === 'crumble') {
         const img = this.crumblePlatGroup.create(p.x, p.y, texKey);
         img.setDisplaySize(p.w, 18).refreshBody();
-        img.setTint(0xff9966); // orange-red tint = crumbles
+        img.setTint(0xff9966); // orange-red = crumbles
         img.crumbleState = 'normal';
+
+      } else if (p.type === 'bounce') {
+        this.bouncePlatGroup.create(p.x, p.y, texKey)
+          .setDisplaySize(p.w, 18).refreshBody()
+          .setTint(0x44ff88); // green = bouncy
 
       } else if (p.type === 'moving') {
         const img = this.physics.add.image(p.x, p.y, texKey)
@@ -254,12 +275,41 @@ export default class GameScene extends Phaser.Scene {
   }
 
   _onCollectAnimal(noah, animal) {
+    const ax = animal.x, ay = animal.y;
     animal.destroy();
     this.score += 25;
     this._animalsCollected++;
     this.sound.collect();
-    this._showFloatText(noah.x, noah.y - 32, '+25 🐾', '#ffe066');
+    this._showFloatText(ax, ay - 28, '+25 🐾', '#ffe066');
+    this._showCollectEffect(ax, ay);
     this.events.emit('scoreUpdate', this.score);
+  }
+
+  _showCollectEffect(x, y) {
+    const cols = [0xffd700, 0xff69b4, 0x00ff88, 0xff6622, 0x44eeff, 0xffffff];
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * Math.PI * 2;
+      const dist  = Phaser.Math.Between(38, 85);
+      const star  = this.add.image(x, y, 'star')
+        .setScale(0.55).setDepth(22).setTint(cols[i % cols.length]);
+      this.tweens.add({
+        targets: star,
+        x: x + Math.cos(angle) * dist,
+        y: y + Math.sin(angle) * dist,
+        scaleX: 0, scaleY: 0, alpha: 0,
+        duration: 520, ease: 'Power2',
+        onComplete: () => star.destroy(),
+      });
+    }
+  }
+
+  // ── Bounce logic ─────────────────────────────────────────────────────
+  _onBounceCollide(noah, plat) {
+    if (!noah.body.blocked.down) return;
+    noah.setVelocityY(-780);
+    this.sound.bounce();
+    this._showFloatText(noah.x, noah.y - 32, '🌟 BOING!', '#44ffaa');
+    this.cameras.main.shake(80, 0.006);
   }
 
   // ── Crumble logic ────────────────────────────────────────────────────
@@ -386,9 +436,10 @@ export default class GameScene extends Phaser.Scene {
     this.sound.loseLife();
 
     if (this.lives <= 0) {
+      this.sound.stopMusic();
       this.time.delayedCall(900, () => {
         this.scene.stop('UI');
-        this.scene.start('Menu');
+        this.scene.start('GameOver', { score: this.score, level: this.level });
       });
     } else {
       this._waterPaused = true; // freeze water while respawning
@@ -409,6 +460,7 @@ export default class GameScene extends Phaser.Scene {
     this._won = true;
     this._waterSpeed = 0; // flood stops!
     this.score += 100 + this.lives * 50;
+    this.sound.stopMusic();
     this.sound.win();
 
     // Open the ark door
@@ -520,6 +572,15 @@ export default class GameScene extends Phaser.Scene {
     // UI updates
     const progress = Phaser.Math.Clamp((WORLD_H - noah.y) / (WORLD_H - ARK_Y), 0, 1);
     this.events.emit('heightUpdate', progress);
+
+    // Background color shifts with altitude: blue → cool blue → gray-blue → icy
+    const hBand = Math.min(3, Math.floor(progress * 4));
+    if (hBand !== this._hBand) {
+      this._hBand = hBand;
+      this.cameras.main.setBackgroundColor(
+        ['#87CEEB', '#5aaec8', '#7a9aaa', '#c0d8e4'][hBand]
+      );
+    }
 
     const waterDist = this._waterLevel - noah.y;
     const danger    = Phaser.Math.Clamp(1 - waterDist / 280, 0, 1);
