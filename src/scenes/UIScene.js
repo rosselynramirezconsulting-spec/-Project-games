@@ -13,14 +13,14 @@ export default class UIScene extends Phaser.Scene {
     // Top HUD panel
     this.add.rectangle(width / 2, 28, width, 56, 0x000000, 0.45).setDepth(50);
 
-    // Level label — top left
-    this.levelLabel = this.add.text(16, 14, 'Level 1', {
+    // Level label — read directly from gameScene so level 2+ shows the right number
+    this.levelLabel = this.add.text(16, 14, `Level ${this.gameScene.level}`, {
       fontSize: '20px', fontFamily: 'Arial', fontStyle: 'bold',
       fill: '#ffe066', stroke: '#333', strokeThickness: 3,
     }).setDepth(51);
 
-    // Score — below level
-    this.scoreLabel = this.add.text(16, 38, 'Score: 0', {
+    // Score — read directly from gameScene so a carried-over score shows correctly
+    this.scoreLabel = this.add.text(16, 38, `Score: ${this.gameScene.score}`, {
       fontSize: '15px', fontFamily: 'Arial',
       fill: '#aaffaa', stroke: '#222', strokeThickness: 2,
     }).setDepth(51);

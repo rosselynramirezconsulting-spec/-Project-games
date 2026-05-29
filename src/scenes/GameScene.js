@@ -42,6 +42,8 @@ export default class GameScene extends Phaser.Scene {
     this.level = data.level || 1;
     this.score = data.score || 0;
     this.lives = 3;
+    this._won   = false;
+    this._dying = false;
     this.sound = new SoundManager();
   }
 
@@ -402,14 +404,25 @@ export default class GameScene extends Phaser.Scene {
       }
     };
 
-    canvas.addEventListener('touchstart',  onStart, { passive: true });
-    canvas.addEventListener('touchend',    onEnd,   { passive: true });
-    canvas.addEventListener('touchcancel', onEnd,   { passive: true });
+    // On cancel (system interrupt, notification, swipe-up) changedTouches may be
+    // incomplete — clear everything so no IDs get stranded in the Sets.
+    const onCancel = () => {
+      this._leftTouchIds.clear();
+      this._rightTouchIds.clear();
+      this._jumpTouchIds.clear();
+    };
+
+    canvas.addEventListener('touchstart',  onStart,   { passive: true });
+    canvas.addEventListener('touchend',    onEnd,     { passive: true });
+    canvas.addEventListener('touchcancel', onCancel,  { passive: true });
+    // Also clear when the page loses focus (tab switch, home button on iOS)
+    window.addEventListener('blur', onCancel);
 
     this.events.once('shutdown', () => {
       canvas.removeEventListener('touchstart',  onStart);
       canvas.removeEventListener('touchend',    onEnd);
-      canvas.removeEventListener('touchcancel', onEnd);
+      canvas.removeEventListener('touchcancel', onCancel);
+      window.removeEventListener('blur', onCancel);
       this._leftTouchIds.clear();
       this._rightTouchIds.clear();
       this._jumpTouchIds.clear();
