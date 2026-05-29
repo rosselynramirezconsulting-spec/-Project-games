@@ -282,7 +282,7 @@ export default class GameScene extends Phaser.Scene {
     this.score += 25;
     this._animalsCollected++;
     this.sound.collect();
-    this._showFloatText(ax, ay - 28, '+25 🐾', '#ffe066');
+    this._showFloatText(ax, ay - 28, '+25', '#ffe066');
     this._showCollectEffect(ax, ay);
     this.events.emit('scoreUpdate', this.score);
   }
@@ -310,7 +310,7 @@ export default class GameScene extends Phaser.Scene {
     if (!noah.body.blocked.down) return;
     noah.setVelocityY(-780);
     this.sound.bounce();
-    this._showFloatText(noah.x, noah.y - 32, '🌟 BOING!', '#44ffaa');
+    this._showFloatText(noah.x, noah.y - 32, 'BOING!', '#44ffaa');
     this.cameras.main.shake(80, 0.006);
   }
 
@@ -573,7 +573,8 @@ export default class GameScene extends Phaser.Scene {
     this.cameras.main.scrollY = Phaser.Math.Clamp(this.cameras.main.scrollY, 0, WORLD_H - 702);
 
     // Rain cleanup
-    this.rainGroup.getChildren().forEach((drop) => {
+    // Snapshot the array first — destroying during live iteration skips elements
+    [...this.rainGroup.getChildren()].forEach((drop) => {
       drop.y += 7;
       if (drop.y > this.cameras.main.scrollY + 900) drop.destroy();
     });

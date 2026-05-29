@@ -54,7 +54,7 @@ export default class UIScene extends Phaser.Scene {
     this.tweens.add({ targets: inst, alpha: 0, delay: 4000, duration: 1500 });
 
     // Water warning — bottom of screen, hidden by default
-    this.waterWarning = this.add.text(width / 2, height - 170, '🌊 WATER RISING!', {
+    this.waterWarning = this.add.text(width / 2, height - 170, '~ WATER RISING! ~', {
       fontSize: '22px', fontFamily: 'Arial', fontStyle: 'bold',
       fill: '#00e5ff', stroke: '#003060', strokeThickness: 4,
     }).setDepth(55).setOrigin(0.5).setAlpha(0);
