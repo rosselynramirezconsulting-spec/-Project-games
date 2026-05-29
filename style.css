@@ -9,23 +9,25 @@ html, body {
   height: 100%;
   overflow: hidden;
   background: #1a6bb5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
 }
 
-/* Phaser's scale manager handles canvas centering via inline styles.
-   The container must not use flexbox or it overrides Phaser's centering. */
 #game-container {
   position: absolute;
-  inset: 0;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  overflow: hidden;
 }
 
+/* Center canvas with transform so Safari reads correct bounds for input */
 canvas {
   display: block;
   touch-action: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }

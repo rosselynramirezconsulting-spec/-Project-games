@@ -442,6 +442,7 @@ export default class GameScene extends Phaser.Scene {
       this._waterPaused = true; // freeze water while respawning
       this.time.delayedCall(600, () => {
         this._dying = false;
+        this._jumpLastPressed = -1000;
         this.noah.setPosition(195, WORLD_H - 120);
         this.noah.setVelocity(0, 0);
         this.camMinScrollY = WORLD_H - 702;
@@ -506,12 +507,14 @@ export default class GameScene extends Phaser.Scene {
     this.rightHeld = false;
     let jTouched   = false;
     const ct = this._ctrlTop || 702;
-    [this.input.pointer1, this.input.pointer2, this.input.pointer3].forEach((p) => {
-      if (!p || !p.isDown || p.y < ct) return;
+    const allPtrs = this.input.manager.pointers;
+    for (let i = 0; i < allPtrs.length; i++) {
+      const p = allPtrs[i];
+      if (!p || !p.isDown || p.y < ct) continue;
       if      (p.x < 130) this.leftHeld  = true;
       else if (p.x < 258) this.rightHeld = true;
       else                 jTouched = true;
-    });
+    }
     if (this._lOvl) this._lOvl.setAlpha(this.leftHeld  ? 1 : 0);
     if (this._rOvl) this._rOvl.setAlpha(this.rightHeld ? 1 : 0);
     if (this._jOvl) this._jOvl.setAlpha(jTouched ? 1 : 0);
@@ -522,7 +525,7 @@ export default class GameScene extends Phaser.Scene {
     else if (this.cursors.right.isDown || this.rightHeld) { noah.setVelocityX(NOAH_SPEED); noah.setFlipX(false); }
 
     // Jump — held finger auto-jumps on landing; quick tap gives 300 ms buffer
-    const jumpReady = this.cursors.up.isDown || jTouched || (time - this._jumpLastPressed < 300);
+    const jumpReady = this.cursors.up.isDown || jTouched || (time - this._jumpLastPressed < 1500);
     if (jumpReady && noah.body.blocked.down) {
       noah.setVelocityY(JUMP_FORCE);
       this._jumpLastPressed = -1000; // consumed
