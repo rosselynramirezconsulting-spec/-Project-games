@@ -166,17 +166,21 @@ export default class GameScene extends Phaser.Scene {
 
     let prevY = WORLD_H - 60;
 
+    // Gap is capped at 115 px so every step is within Noah's max jump height (~230 px).
+    // We loop until we reach the Ark instead of stopping at platCount — that was
+    // leaving an unreachable gap in the upper half of the world.
+    const gMin = Math.min(ld.gapMin - 10, 100);
+    const gMax = Math.min(ld.gapMax - 10, 115);
+
     // Two-column layout: left lane (x≈55-145) + right lane (x≈245-335)
-    for (let i = 0; i < ld.platCount; i++) {
-      const gap = Phaser.Math.Between(ld.gapMin - 10, ld.gapMax - 10);
+    while (true) {
+      const gap = Phaser.Math.Between(gMin, gMax);
       const y   = prevY - gap;
       if (y < ARK_Y + 120) break;
 
       const w = Phaser.Math.Between(ld.minW + 10, ld.maxW + 10);
 
-      // Left column platform
       platData.push({ x: Phaser.Math.Between(55, 140), y, w, type: 'static' });
-      // Right column platform (slight y offset for variety)
       platData.push({
         x: Phaser.Math.Between(248, 335),
         y: y + Phaser.Math.Between(-22, 22),
