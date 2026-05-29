@@ -358,42 +358,81 @@ export default class GameScene extends Phaser.Scene {
 
   // ── Controls ─────────────────────────────────────────────────────────
   _setupControls() {
-    this.cursors          = this.input.keyboard.createCursorKeys();
-    this.leftHeld         = false;
-    this.rightHeld        = false;
-    this._jumpLastPressed = -1000; // timestamp; consumed after use
-    this.input.addPointer(2);      // support 3 simultaneous touches
+    this.cursors = this.input.keyboard.createCursorKeys();
 
     const W = 390, H = 844, BY = H - 72;
-    this._ctrlTop = H - 142; // screen-y where control strip starts
+    this._ctrlTop = H - 142;
+    this._jumpLastPressed = -1000;
 
-    // Dark translucent strip
+    // Track active touch IDs per zone using DOM events.
+    // More reliable on iOS Safari than Phaser's pointer polling — survives
+    // multi-touch edge cases and doesn't lose state across many interactions.
+    this._leftTouchIds  = new Set();
+    this._rightTouchIds = new Set();
+    this._jumpTouchIds  = new Set();
+
+    const canvas = this.game.canvas;
+
+    const coords = (touch) => {
+      const r = canvas.getBoundingClientRect();
+      return {
+        gx: (touch.clientX - r.left) * (390 / r.width),
+        gy: (touch.clientY - r.top)  * (844 / r.height),
+      };
+    };
+
+    const onStart = (e) => {
+      for (const t of e.changedTouches) {
+        const { gx, gy } = coords(t);
+        if (gy < this._ctrlTop) continue;
+        if      (gx < 130) this._leftTouchIds.add(t.identifier);
+        else if (gx < 258) this._rightTouchIds.add(t.identifier);
+        else {
+          this._jumpTouchIds.add(t.identifier);
+          this._jumpLastPressed = this.time.now;
+        }
+      }
+    };
+
+    const onEnd = (e) => {
+      for (const t of e.changedTouches) {
+        this._leftTouchIds.delete(t.identifier);
+        this._rightTouchIds.delete(t.identifier);
+        this._jumpTouchIds.delete(t.identifier);
+      }
+    };
+
+    canvas.addEventListener('touchstart',  onStart, { passive: true });
+    canvas.addEventListener('touchend',    onEnd,   { passive: true });
+    canvas.addEventListener('touchcancel', onEnd,   { passive: true });
+
+    this.events.once('shutdown', () => {
+      canvas.removeEventListener('touchstart',  onStart);
+      canvas.removeEventListener('touchend',    onEnd);
+      canvas.removeEventListener('touchcancel', onEnd);
+      this._leftTouchIds.clear();
+      this._rightTouchIds.clear();
+      this._jumpTouchIds.clear();
+    });
+
+    // ── Dark translucent strip
     this.add.rectangle(W / 2, H - 70, W, 142, 0x000000, 0.44)
       .setScrollFactor(0).setDepth(29);
 
-    // ── Draw 3D circle buttons via Graphics ───────────────────────────
     const g = this.add.graphics().setScrollFactor(0).setDepth(30);
-
     const drawBtn = (cx, cy, r, col) => {
-      g.fillStyle(0x000000, 0.38);
-      g.fillCircle(cx + 3, cy + 5, r);
-      g.fillStyle(col, 0.92);
-      g.fillCircle(cx, cy, r);
-      g.fillStyle(0xffffff, 0.24);
-      g.fillEllipse(cx - r * 0.18, cy - r * 0.28, r * 1.1, r * 0.52);
-      g.fillStyle(0x000000, 0.16);
-      g.fillEllipse(cx, cy + r * 0.44, r * 1.55, r * 0.48);
+      g.fillStyle(0x000000, 0.38); g.fillCircle(cx + 3, cy + 5, r);
+      g.fillStyle(col, 0.92);      g.fillCircle(cx, cy, r);
+      g.fillStyle(0xffffff, 0.24); g.fillEllipse(cx - r * 0.18, cy - r * 0.28, r * 1.1, r * 0.52);
+      g.fillStyle(0x000000, 0.16); g.fillEllipse(cx, cy + r * 0.44, r * 1.55, r * 0.48);
     };
-
     drawBtn( 68, BY, 50, 0x1a3a88);
     drawBtn(182, BY, 50, 0x1a3a88);
     drawBtn(316, BY, 62, 0xcc4200);
 
-    // ── Icons ─────────────────────────────────────────────────────────
     const ico = (x, y, t, sz) => this.add.text(x, y, t, {
       fontSize: sz || '42px', fontFamily: 'Arial', fontStyle: 'bold', fill: '#ffffff',
     }).setOrigin(0.5).setScrollFactor(0).setDepth(32);
-
     ico( 68, BY - 1, '←');
     ico(182, BY - 1, '→');
     ico(316, BY - 6, '↑', '48px');
@@ -402,25 +441,14 @@ export default class GameScene extends Phaser.Scene {
       fill: 'rgba(255,215,130,0.85)',
     }).setOrigin(0.5).setScrollFactor(0).setDepth(32);
 
-    // ── Press overlays — stored as instance vars so update() can drive them
     const mkOvl = (cx, cy, r) => {
       const og = this.add.graphics().setScrollFactor(0).setDepth(33);
-      og.fillStyle(0x000000, 0.34);
-      og.fillCircle(cx, cy, r);
+      og.fillStyle(0x000000, 0.34); og.fillCircle(cx, cy, r);
       return og.setAlpha(0);
     };
     this._lOvl = mkOvl( 68, BY, 50);
     this._rOvl = mkOvl(182, BY, 50);
     this._jOvl = mkOvl(316, BY, 62);
-
-    // ── Jump: one event listener just records a timestamp ─────────────
-    // Left/Right state is polled each frame in update() — never goes stale.
-    // Jump uses a 300 ms buffer so pressing slightly before landing still fires.
-    this.input.on('pointerdown', (ptr) => {
-      if (ptr.y >= this._ctrlTop && ptr.x >= 258) {
-        this._jumpLastPressed = this.time.now;
-      }
-    }, this);
   }
 
   // ── Death / Win ───────────────────────────────────────────────────────
@@ -501,20 +529,10 @@ export default class GameScene extends Phaser.Scene {
     const noah = this.noah;
     const dt   = delta / 1000;
 
-    // Poll all active touch pointers for left/right and jump overlay.
-    // This is more reliable than event-based state — never goes stale.
-    this.leftHeld  = false;
-    this.rightHeld = false;
-    let jTouched   = false;
-    const ct = this._ctrlTop || 702;
-    const allPtrs = this.input.manager.pointers;
-    for (let i = 0; i < allPtrs.length; i++) {
-      const p = allPtrs[i];
-      if (!p || !p.isDown || p.y < ct) continue;
-      if      (p.x < 130) this.leftHeld  = true;
-      else if (p.x < 258) this.rightHeld = true;
-      else                 jTouched = true;
-    }
+    // Read touch state from DOM Set-based tracking (set in _setupControls).
+    this.leftHeld  = !!(this._leftTouchIds  && this._leftTouchIds.size  > 0);
+    this.rightHeld = !!(this._rightTouchIds && this._rightTouchIds.size > 0);
+    let jTouched   = !!(this._jumpTouchIds  && this._jumpTouchIds.size  > 0);
     if (this._lOvl) this._lOvl.setAlpha(this.leftHeld  ? 1 : 0);
     if (this._rOvl) this._rOvl.setAlpha(this.rightHeld ? 1 : 0);
     if (this._jOvl) this._jOvl.setAlpha(jTouched ? 1 : 0);
@@ -553,7 +571,6 @@ export default class GameScene extends Phaser.Scene {
       if (!plat.active) return;
       if (plat.x <= plat.minX && plat.body.velocity.x < 0) plat.setVelocityX( Math.abs(plat.body.velocity.x));
       if (plat.x >= plat.maxX && plat.body.velocity.x > 0) plat.setVelocityX(-Math.abs(plat.body.velocity.x));
-      plat.body.reset(plat.x, plat.y);
     });
 
     // Rising water — paused during respawn grace period
