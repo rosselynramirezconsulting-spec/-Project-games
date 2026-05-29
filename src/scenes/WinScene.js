@@ -65,11 +65,11 @@ export default class WinScene extends Phaser.Scene {
 
     // Title banner
     this.add.rectangle(W / 2, 52, W, 98, 0x000000, 0.5).setDepth(10);
-    this.add.text(W / 2, 30, `Level ${this.level} Complete! 🎉`, {
+    this.add.text(W / 2, 30, `Level ${this.level} Complete!`, {
       fontSize: '32px', fontFamily: 'Arial', fontStyle: 'bold',
       fill: '#ffe066', stroke: '#7a4200', strokeThickness: 5,
     }).setOrigin(0.5).setDepth(11);
-    this.add.text(W / 2, 72, `🐾 Animals saved: ${this.animalsCollected}   Score: ${this.finalScore}`, {
+    this.add.text(W / 2, 72, `Animals saved: ${this.animalsCollected}   Score: ${this.finalScore}`, {
       fontSize: '16px', fontFamily: 'Arial',
       fill: '#aaffaa', stroke: '#222', strokeThickness: 2,
     }).setOrigin(0.5).setDepth(11);

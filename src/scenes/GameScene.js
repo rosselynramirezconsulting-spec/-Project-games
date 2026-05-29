@@ -589,8 +589,8 @@ export default class GameScene extends Phaser.Scene {
     // Fall below camera
     if (noah.y > this.cameras.main.scrollY + 844 + 80) this.handleDeath();
 
-    // Win
-    if (noah.y < ARK_Y + 120) this.handleWin();
+    // Win — only when grounded or falling (not mid-jump going up past the ark)
+    if (!this._won && !this._dying && noah.y < ARK_Y + 130 && noah.body.velocity.y >= -100) this.handleWin();
 
     // UI updates
     const progress = Phaser.Math.Clamp((WORLD_H - noah.y) / (WORLD_H - ARK_Y), 0, 1);
