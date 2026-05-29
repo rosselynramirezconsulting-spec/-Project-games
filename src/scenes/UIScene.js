@@ -98,5 +98,10 @@ export default class UIScene extends Phaser.Scene {
       }
       this._lastDanger = danger;
     });
+
+    this.events.once('shutdown', () => {
+      ['levelUpdate', 'scoreUpdate', 'livesUpdate', 'heightUpdate', 'waterUpdate']
+        .forEach(evt => this.gameScene.events.off(evt));
+    });
   }
 }
