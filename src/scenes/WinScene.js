@@ -5,6 +5,10 @@ export default class WinScene extends Phaser.Scene {
     this.level = data.level || 1;
     this.finalScore = data.score || 0;
     this.animalsCollected = data.animalsCollected || 0;
+    const prev = parseInt(localStorage.getItem('noahsArkHighScore') || '0', 10);
+    this.isNewBest = this.finalScore > prev;
+    this.highScore = Math.max(this.finalScore, prev);
+    if (this.isNewBest) localStorage.setItem('noahsArkHighScore', this.highScore);
   }
 
   create() {
@@ -64,15 +68,29 @@ export default class WinScene extends Phaser.Scene {
     });
 
     // Title banner
-    this.add.rectangle(W / 2, 52, W, 98, 0x000000, 0.5).setDepth(10);
-    this.add.text(W / 2, 30, `Level ${this.level} Complete!`, {
+    this.add.rectangle(W / 2, 58, W, 112, 0x000000, 0.5).setDepth(10);
+    this.add.text(W / 2, 24, `Level ${this.level} Complete!`, {
       fontSize: '32px', fontFamily: 'Arial', fontStyle: 'bold',
       fill: '#ffe066', stroke: '#7a4200', strokeThickness: 5,
     }).setOrigin(0.5).setDepth(11);
-    this.add.text(W / 2, 72, `Animals saved: ${this.animalsCollected}   Score: ${this.finalScore}`, {
-      fontSize: '16px', fontFamily: 'Arial',
+    this.add.text(W / 2, 62, `Animals saved: ${this.animalsCollected}   Score: ${this.finalScore}`, {
+      fontSize: '15px', fontFamily: 'Arial',
       fill: '#aaffaa', stroke: '#222', strokeThickness: 2,
     }).setOrigin(0.5).setDepth(11);
+
+    // Best score row in banner
+    const bestColor = this.isNewBest ? '#ffdd00' : '#aaddff';
+    this.add.text(W / 2 - 18, 90, `Best: ${this.highScore}`, {
+      fontSize: '14px', fontFamily: 'Arial', fontStyle: 'bold',
+      fill: bestColor, stroke: '#222', strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(11);
+
+    if (this.isNewBest) {
+      const nb = this.add.text(W / 2 + 72, 90, 'NEW BEST!', {
+        fontSize: '13px', fontFamily: 'Arial', fontStyle: 'bold', fill: '#ffdd00',
+      }).setOrigin(0.5).setDepth(11);
+      this.tweens.add({ targets: nb, scaleX: 1.25, scaleY: 1.25, duration: 380, yoyo: true, repeat: -1 });
+    }
 
     // Animals burst out of the ark after a short delay
     this._spawnAnimalParade(W / 2, arkY - 20, waterY);

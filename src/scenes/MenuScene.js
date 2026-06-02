@@ -59,11 +59,24 @@ export default class MenuScene extends Phaser.Scene {
       align: 'center',
     }).setOrigin(0.5);
 
+    // High score
+    const best = parseInt(localStorage.getItem('noahsArkHighScore') || '0', 10);
+    if (best > 0) {
+      this.add.rectangle(width / 2, height * 0.82, 220, 44, 0x000000, 0.4).setOrigin(0.5);
+      this.add.text(width / 2, height * 0.82 - 8, 'BEST SCORE', {
+        fontSize: '13px', fontFamily: 'Arial', fill: '#aaddff',
+      }).setOrigin(0.5);
+      this.add.text(width / 2, height * 0.82 + 10, `${best}`, {
+        fontSize: '22px', fontFamily: 'Arial', fontStyle: 'bold',
+        fill: '#ffe066', stroke: '#333', strokeThickness: 3,
+      }).setOrigin(0.5);
+    }
+
     // Play button
-    const btnBg = this.add.rectangle(width / 2, height * 0.87, 220, 64, 0xff8c00).setOrigin(0.5)
+    const btnBg = this.add.rectangle(width / 2, height * 0.92, 220, 64, 0xff8c00).setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
-    const btnHighlight = this.add.rectangle(width / 2, height * 0.87 - 6, 210, 26, 0xffbb44, 0.4).setOrigin(0.5);
-    this.add.text(width / 2, height * 0.87, '▶  PLAY', {
+    const btnHighlight = this.add.rectangle(width / 2, height * 0.92 - 6, 210, 26, 0xffbb44, 0.4).setOrigin(0.5);
+    this.add.text(width / 2, height * 0.92, '▶  PLAY', {
       fontSize: '30px',
       fontFamily: 'Arial',
       fontStyle: 'bold',
@@ -83,7 +96,6 @@ export default class MenuScene extends Phaser.Scene {
       });
     });
 
-    // Bounce the button gently
     this.tweens.add({
       targets: btnBg,
       scaleX: 1.04,

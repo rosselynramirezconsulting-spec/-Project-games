@@ -4,6 +4,10 @@ export default class GameOverScene extends Phaser.Scene {
   init(data) {
     this.finalScore = data.score || 0;
     this.level      = data.level || 1;
+    const prev = parseInt(localStorage.getItem('noahsArkHighScore') || '0', 10);
+    this.isNewBest = this.finalScore > prev;
+    this.highScore = Math.max(this.finalScore, prev);
+    if (this.isNewBest) localStorage.setItem('noahsArkHighScore', this.highScore);
   }
 
   create() {
@@ -59,15 +63,31 @@ export default class GameOverScene extends Phaser.Scene {
 
     this.tweens.add({ targets: title, alpha: 1, duration: 600, ease: 'Back.easeOut' });
 
-    // Score
-    this.add.rectangle(W / 2, H * 0.37, 280, 72, 0x000000, 0.5);
-    this.add.text(W / 2, H * 0.35, 'Final Score', {
-      fontSize: '18px', fontFamily: 'Arial', fill: '#88bbdd',
+    // Score + high score panel
+    this.add.rectangle(W / 2, H * 0.37, 300, 100, 0x000000, 0.5);
+    this.add.text(W / 2, H * 0.335, 'Final Score', {
+      fontSize: '17px', fontFamily: 'Arial', fill: '#88bbdd',
     }).setOrigin(0.5);
-    this.add.text(W / 2, H * 0.395, `${this.finalScore}`, {
-      fontSize: '40px', fontFamily: 'Arial', fontStyle: 'bold',
+    this.add.text(W / 2, H * 0.375, `${this.finalScore}`, {
+      fontSize: '38px', fontFamily: 'Arial', fontStyle: 'bold',
       fill: '#ffe066', stroke: '#333', strokeThickness: 4,
     }).setOrigin(0.5);
+
+    // Best score row
+    this.add.text(W / 2 - 30, H * 0.415, 'BEST:', {
+      fontSize: '14px', fontFamily: 'Arial', fill: '#aaddff',
+    }).setOrigin(0.5);
+    this.add.text(W / 2 + 28, H * 0.415, `${this.highScore}`, {
+      fontSize: '16px', fontFamily: 'Arial', fontStyle: 'bold',
+      fill: this.isNewBest ? '#ffdd00' : '#aaddff', stroke: '#222', strokeThickness: 2,
+    }).setOrigin(0.5);
+
+    if (this.isNewBest) {
+      const newBest = this.add.text(W / 2 + 80, H * 0.415, 'NEW BEST!', {
+        fontSize: '13px', fontFamily: 'Arial', fontStyle: 'bold', fill: '#ffdd00',
+      }).setOrigin(0.5);
+      this.tweens.add({ targets: newBest, scaleX: 1.2, scaleY: 1.2, duration: 400, yoyo: true, repeat: -1 });
+    }
 
     // Try Again button
     const retryBtn = this.add.rectangle(W / 2, H * 0.65, 240, 64, 0xcc4400)
