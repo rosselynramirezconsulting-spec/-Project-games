@@ -1,11 +1,13 @@
-import { drawNoah, drawArk, drawArkOpen, drawAnimal, drawBackground, drawWater, drawRainDrop, drawCoin, drawPlatform, drawIcePlatform, drawHeart } from '../utils/Graphics.js';
+import { drawArk, drawArkOpen, drawAnimal, drawBackground, drawWater, drawRainDrop, drawCoin, drawPlatform, drawIcePlatform, drawHeart } from '../utils/Graphics.js';
 
 export default class BootScene extends Phaser.Scene {
   constructor() {
     super('Boot');
   }
 
-  // No preload needed — zero external files to fetch
+  preload() {
+    this.load.image('noah', 'assets/noah.png');
+  }
 
   create() {
     this.generateTextures();
@@ -23,9 +25,7 @@ export default class BootScene extends Phaser.Scene {
     g.generateTexture('water', 390, 120);
     g.clear();
 
-    drawNoah(g);
-    g.generateTexture('noah', 48, 64);
-    g.clear();
+    // 'noah' texture loaded from assets/noah.png in preload()
 
     drawArk(g);
     g.generateTexture('ark', 120, 100);
