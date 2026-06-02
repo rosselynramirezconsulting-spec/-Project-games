@@ -4,6 +4,7 @@ import GameScene     from './scenes/GameScene.js';
 import UIScene       from './scenes/UIScene.js';
 import WinScene      from './scenes/WinScene.js';
 import GameOverScene from './scenes/GameOverScene.js';
+import ColorScene    from './scenes/ColorScene.js';
 
 const config = {
   type: Phaser.CANVAS,
@@ -22,7 +23,7 @@ const config = {
       debug: false,
     },
   },
-  scene: [BootScene, MenuScene, GameScene, UIScene, WinScene, GameOverScene],
+  scene: [BootScene, MenuScene, GameScene, UIScene, WinScene, GameOverScene, ColorScene],
 };
 
 const game = new Phaser.Game(config);
