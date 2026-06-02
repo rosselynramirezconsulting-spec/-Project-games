@@ -1,109 +1,89 @@
+import { getScores } from '../utils/Scores.js';
+
 export default class MenuScene extends Phaser.Scene {
   constructor() {
     super('Menu');
   }
 
   create() {
-    const { width, height } = this.cameras.main;
+    const W = 390, H = 844;
 
-    this.add.image(width / 2, height / 2, 'background').setDisplaySize(width, height);
+    this.add.image(W / 2, H / 2, 'background').setDisplaySize(W, H);
 
-    // Ark decoration
-    this.add.image(width / 2, height * 0.38, 'ark').setScale(2.2);
-
-    // Water
-    this.add.image(width / 2, height * 0.54, 'water').setDisplaySize(width, 120);
-
-    // Floating animals in a row
-    const animals = ['elephant', 'giraffe', 'lion', 'zebra', 'monkey', 'rabbit', 'penguin', 'bear'];
-    animals.forEach((a, i) => {
-      const x = 30 + (i % 4) * 90;
-      const y = height * 0.68 + Math.floor(i / 4) * 70;
-      const sprite = this.add.image(x, y, a).setScale(1.2);
-      this.tweens.add({
-        targets: sprite,
-        y: y - 10,
-        duration: 900 + i * 120,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.easeInOut',
-      });
-    });
+    // Ark + water decoration
+    this.add.image(W / 2, H * 0.32, 'ark').setScale(2.0);
+    this.add.image(W / 2, H * 0.46, 'water').setDisplaySize(W, 100);
 
     // Title panel
-    const panel = this.add.rectangle(width / 2, height * 0.12, 360, 90, 0x000000, 0.35).setOrigin(0.5);
-    this.add.text(width / 2, height * 0.10, "Noah's Ark", {
-      fontSize: '42px',
-      fontFamily: 'Arial',
-      fontStyle: 'bold',
-      fill: '#ffe066',
-      stroke: '#7a4200',
-      strokeThickness: 5,
+    this.add.rectangle(W / 2, H * 0.11, 360, 86, 0x000000, 0.35).setOrigin(0.5);
+    this.add.text(W / 2, H * 0.09, "Noah's Ark", {
+      fontSize: '42px', fontFamily: 'Arial', fontStyle: 'bold',
+      fill: '#ffe066', stroke: '#7a4200', strokeThickness: 5,
     }).setOrigin(0.5);
-    this.add.text(width / 2, height * 0.155, 'Adventure!', {
-      fontSize: '26px',
-      fontFamily: 'Arial',
-      fill: '#ffffff',
-      stroke: '#7a4200',
-      strokeThickness: 4,
+    this.add.text(W / 2, H * 0.145, 'Adventure!', {
+      fontSize: '26px', fontFamily: 'Arial',
+      fill: '#ffffff', stroke: '#7a4200', strokeThickness: 4,
     }).setOrigin(0.5);
 
-    // Subtitle — updated for vertical platformer
-    this.add.text(width / 2, height * 0.59, 'Jump up platforms to reach the Ark!', {
-      fontSize: '18px',
-      fontFamily: 'Arial',
-      fill: '#ffffff',
-      stroke: '#1a5a90',
-      strokeThickness: 3,
-      wordWrap: { width: 340 },
-      align: 'center',
+    this.add.text(W / 2, H * 0.52, 'Jump up platforms to reach the Ark!', {
+      fontSize: '16px', fontFamily: 'Arial',
+      fill: '#ffffff', stroke: '#1a5a90', strokeThickness: 3,
+      wordWrap: { width: 330 }, align: 'center',
     }).setOrigin(0.5);
 
-    // High score
-    const best = parseInt(localStorage.getItem('noahsArkHighScore') || '0', 10);
-    if (best > 0) {
-      this.add.rectangle(width / 2, height * 0.82, 220, 44, 0x000000, 0.4).setOrigin(0.5);
-      this.add.text(width / 2, height * 0.82 - 8, 'BEST SCORE', {
-        fontSize: '13px', fontFamily: 'Arial', fill: '#aaddff',
+    // ── High Score Rankings ──────────────────────────────────────────
+    const scores = getScores();
+    const panelTop = H * 0.575;
+    const rowH     = 30;
+    const rows     = Math.min(scores.length, 5);
+    const panelH   = 32 + Math.max(rows, 1) * rowH + 8;
+
+    this.add.rectangle(W / 2, panelTop + panelH / 2, 330, panelH, 0x000000, 0.48).setOrigin(0.5);
+    this.add.text(W / 2, panelTop + 14, 'HIGH SCORES', {
+      fontSize: '14px', fontFamily: 'Arial', fontStyle: 'bold', fill: '#aaddff',
+    }).setOrigin(0.5);
+
+    if (rows === 0) {
+      this.add.text(W / 2, panelTop + 46, 'No scores yet — play to get on the board!', {
+        fontSize: '13px', fontFamily: 'Arial', fill: '#667799',
+        wordWrap: { width: 290 }, align: 'center',
       }).setOrigin(0.5);
-      this.add.text(width / 2, height * 0.82 + 10, `${best}`, {
-        fontSize: '22px', fontFamily: 'Arial', fontStyle: 'bold',
-        fill: '#ffe066', stroke: '#333', strokeThickness: 3,
-      }).setOrigin(0.5);
+    } else {
+      const MEDAL = ['#ffd700', '#c0c0c0', '#cd7f32', '#99aabb', '#99aabb'];
+      scores.slice(0, 5).forEach(({ score, level }, i) => {
+        const y = panelTop + 32 + i * rowH + rowH / 2;
+        const col = MEDAL[i];
+        this.add.text(W / 2 - 140, y, `#${i + 1}`, {
+          fontSize: '15px', fontFamily: 'Arial', fontStyle: 'bold', fill: col,
+        }).setOrigin(0, 0.5);
+        this.add.text(W / 2 + 60, y, `${score}`, {
+          fontSize: '17px', fontFamily: 'Arial', fontStyle: 'bold', fill: col,
+        }).setOrigin(1, 0.5);
+        this.add.text(W / 2 + 90, y, `Lv.${level}`, {
+          fontSize: '13px', fontFamily: 'Arial', fill: '#88aacc',
+        }).setOrigin(0, 0.5);
+      });
     }
 
-    // Play button
-    const btnBg = this.add.rectangle(width / 2, height * 0.92, 220, 64, 0xff8c00).setOrigin(0.5)
+    // ── Play button ───────────────────────────────────────────────────
+    const btnY  = panelTop + panelH + 52;
+    const btnBg = this.add.rectangle(W / 2, btnY, 220, 64, 0xff8c00)
       .setInteractive({ useHandCursor: true });
-    const btnHighlight = this.add.rectangle(width / 2, height * 0.92 - 6, 210, 26, 0xffbb44, 0.4).setOrigin(0.5);
-    this.add.text(width / 2, height * 0.92, '▶  PLAY', {
-      fontSize: '30px',
-      fontFamily: 'Arial',
-      fontStyle: 'bold',
-      fill: '#ffffff',
-      stroke: '#7a4200',
-      strokeThickness: 4,
+    const btnHL = this.add.rectangle(W / 2, btnY - 6, 210, 26, 0xffbb44, 0.4);
+    this.add.text(W / 2, btnY, '▶  PLAY', {
+      fontSize: '30px', fontFamily: 'Arial', fontStyle: 'bold',
+      fill: '#ffffff', stroke: '#7a4200', strokeThickness: 4,
     }).setOrigin(0.5);
 
     btnBg.on('pointerdown', () => {
       this.tweens.add({
-        targets: [btnBg, btnHighlight],
-        scaleX: 0.95,
-        scaleY: 0.95,
-        duration: 80,
-        yoyo: true,
+        targets: [btnBg, btnHL], scaleX: 0.95, scaleY: 0.95, duration: 80, yoyo: true,
         onComplete: () => this.scene.start('Game', { level: 1, score: 0 }),
       });
     });
-
     this.tweens.add({
-      targets: btnBg,
-      scaleX: 1.04,
-      scaleY: 1.04,
-      duration: 800,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Sine.easeInOut',
+      targets: btnBg, scaleX: 1.04, scaleY: 1.04,
+      duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
     });
   }
 }
