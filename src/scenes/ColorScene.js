@@ -135,27 +135,30 @@ export default class ColorScene extends Phaser.Scene {
     // Staff
     this._z(g => g.fillRect(101, 158, 12, 330),
       new Phaser.Geom.Rectangle(96, 154, 22, 334), Phaser.Geom.Rectangle.Contains);
-    // Hat
-    this._z(g => { g.fillRect(150, 102, 90, 44); g.fillRect(140, 142, 110, 18); },
-      new Phaser.Geom.Rectangle(140, 102, 110, 58), Phaser.Geom.Rectangle.Contains);
+    // Hood/hat — taller rounded shape, more biblical
+    this._z(g => {
+      g.fillRect(158, 108, 74, 56);
+      g.fillCircle(cx, 108, 37);
+      g.fillRect(143, 160, 104, 14);
+    }, new Phaser.Geom.Rectangle(143, 85, 104, 89), Phaser.Geom.Rectangle.Contains);
     // Head / skin
-    this._z(g => g.fillCircle(cx, 200, 40),
-      new Phaser.Geom.Circle(cx, 200, 40), Phaser.Geom.Circle.Contains);
-    // Beard
-    this._z(g => g.fillTriangle(163, 237, 227, 237, cx, 288),
-      new Phaser.Geom.Triangle(163, 237, 227, 237, cx, 288), Phaser.Geom.Triangle.Contains);
-    // Left arm
-    this._z(g => g.fillRect(119, 248, 35, 86),
-      new Phaser.Geom.Rectangle(119, 248, 35, 86), Phaser.Geom.Rectangle.Contains);
+    this._z(g => g.fillCircle(cx, 204, 40),
+      new Phaser.Geom.Circle(cx, 204, 40), Phaser.Geom.Circle.Contains);
+    // Beard — wider for more Noah-like look
+    this._z(g => g.fillTriangle(158, 240, 232, 240, cx, 298),
+      new Phaser.Geom.Triangle(158, 240, 232, 240, cx, 298), Phaser.Geom.Triangle.Contains);
+    // Left arm (angled inward)
+    this._z(g => g.fillTriangle(122, 248, 154, 248, 130, 328),
+      new Phaser.Geom.Triangle(122, 248, 154, 248, 130, 328), Phaser.Geom.Triangle.Contains);
     // Robe body
-    this._z(g => g.fillRect(152, 237, 86, 128),
-      new Phaser.Geom.Rectangle(152, 237, 86, 128), Phaser.Geom.Rectangle.Contains);
-    // Right arm
-    this._z(g => g.fillRect(240, 248, 35, 86),
-      new Phaser.Geom.Rectangle(240, 248, 35, 86), Phaser.Geom.Rectangle.Contains);
+    this._z(g => g.fillRect(152, 240, 86, 128),
+      new Phaser.Geom.Rectangle(152, 240, 86, 128), Phaser.Geom.Rectangle.Contains);
+    // Right arm (angled inward, holds staff)
+    this._z(g => g.fillTriangle(238, 248, 270, 248, 262, 328),
+      new Phaser.Geom.Triangle(238, 248, 270, 248, 262, 328), Phaser.Geom.Triangle.Contains);
     // Skirt
-    this._z(g => g.fillTriangle(135, 365, 255, 365, cx, 488),
-      new Phaser.Geom.Triangle(135, 365, 255, 365, cx, 488), Phaser.Geom.Triangle.Contains);
+    this._z(g => g.fillTriangle(135, 368, 255, 368, cx, 488),
+      new Phaser.Geom.Triangle(135, 368, 255, 368, cx, 488), Phaser.Geom.Triangle.Contains);
   }
 
   _draw_noah(g) {
@@ -165,59 +168,58 @@ export default class ColorScene extends Phaser.Scene {
     g.lineBetween(107, 488, 107, 175);
     g.lineBetween(107, 175, 96, 157);
     g.lineBetween(96, 157, 114, 145);
-    // Hat brim
+    // Hood — rounded top (more biblical than flat top hat)
     g.lineStyle(ls, 0x000000, 1);
-    g.strokeRect(140, 142, 110, 18);
-    // Hat body
-    g.strokeRect(150, 102, 90, 44);
+    g.strokeCircle(cx, 108, 37);           // rounded crown
+    g.strokeRect(158, 108, 74, 56);        // hood sides
+    g.lineBetween(143, 160, 252, 160);     // brim line
+    g.strokeRect(143, 160, 104, 14);       // brim band
     // Head
-    g.strokeCircle(cx, 200, 40);
+    g.strokeCircle(cx, 204, 40);
     // Eyes
     g.fillStyle(0x000000, 1);
-    g.fillCircle(cx - 14, 193, 5);
-    g.fillCircle(cx + 14, 193, 5);
+    g.fillCircle(cx - 14, 197, 5);
+    g.fillCircle(cx + 14, 197, 5);
     g.fillStyle(0xffffff, 1);
-    g.fillCircle(cx - 12, 191, 2);
-    g.fillCircle(cx + 12, 191, 2);
-    // Eyebrows
-    g.lineStyle(2.5, 0x000000, 1);
-    g.lineBetween(cx - 20, 183, cx - 8, 181);
-    g.lineBetween(cx + 8, 181, cx + 20, 183);
+    g.fillCircle(cx - 12, 195, 2);
+    g.fillCircle(cx + 12, 195, 2);
+    // Eyebrows (bushy, elderly)
+    g.lineStyle(3, 0x000000, 1);
+    g.lineBetween(cx - 22, 186, cx - 7, 183);
+    g.lineBetween(cx + 7, 183, cx + 22, 186);
     // Nose
     g.lineStyle(2, 0x000000, 1);
-    g.lineBetween(cx - 1, 198, cx - 5, 209);
-    g.lineBetween(cx + 1, 198, cx + 5, 209);
-    g.lineBetween(cx - 5, 209, cx + 5, 209);
-    // Smile
+    g.lineBetween(cx, 200, cx - 5, 212);
+    g.lineBetween(cx, 200, cx + 5, 212);
+    g.lineBetween(cx - 5, 212, cx + 5, 212);
+    // Smile / kind expression
     g.lineStyle(2.5, 0x000000, 1);
-    g.strokePoints([{ x: cx - 12, y: 216 }, { x: cx, y: 224 }, { x: cx + 12, y: 216 }], false);
-    // Beard outline + texture lines
+    g.strokePoints([{ x: cx - 11, y: 220 }, { x: cx, y: 228 }, { x: cx + 11, y: 220 }], false);
+    // Beard — wide with texture lines
     g.lineStyle(ls, 0x000000, 1);
-    g.strokeTriangle(163, 237, 227, 237, cx, 288);
-    g.lineStyle(2, 0x000000, 0.55);
-    g.lineBetween(cx - 5, 237, cx - 10, 286);
-    g.lineBetween(cx, 237, cx, 287);
-    g.lineBetween(cx + 5, 237, cx + 10, 286);
-    // Neck
+    g.strokeTriangle(158, 240, 232, 240, cx, 298);
+    g.lineStyle(2, 0x000000, 0.5);
+    g.lineBetween(cx - 8, 240, cx - 14, 296);
+    g.lineBetween(cx, 240, cx, 297);
+    g.lineBetween(cx + 8, 240, cx + 14, 296);
+    // Left arm (angled)
     g.lineStyle(ls, 0x000000, 1);
-    g.lineBetween(cx - 12, 238, cx - 12, 240);
-    g.lineBetween(cx + 12, 238, cx + 12, 240);
-    // Arms
-    g.strokeRect(119, 248, 35, 86);
-    g.strokeRect(240, 248, 35, 86);
+    g.strokeTriangle(122, 248, 154, 248, 130, 328);
     // Robe body
-    g.strokeRect(152, 237, 86, 128);
+    g.strokeRect(152, 240, 86, 128);
     // Robe fold lines
     g.lineStyle(2, 0x000000, 0.38);
-    g.lineBetween(cx, 237, cx, 365);
-    g.lineBetween(152, 280, 238, 280);
-    g.lineBetween(152, 323, 238, 323);
-    // Skirt
+    g.lineBetween(cx, 240, cx, 368);
+    g.lineBetween(152, 284, 238, 284);
+    g.lineBetween(152, 328, 238, 328);
+    // Right arm (angled)
     g.lineStyle(ls, 0x000000, 1);
-    g.strokeTriangle(135, 365, 255, 365, cx, 488);
+    g.strokeTriangle(238, 248, 270, 248, 262, 328);
+    // Skirt
+    g.strokeTriangle(135, 368, 255, 368, cx, 488);
     g.lineStyle(2, 0x000000, 0.38);
-    g.lineBetween(cx - 22, 365, cx - 11, 488);
-    g.lineBetween(cx + 22, 365, cx + 11, 488);
+    g.lineBetween(cx - 22, 368, cx - 11, 488);
+    g.lineBetween(cx + 22, 368, cx + 11, 488);
     // Sandals
     g.lineStyle(2.5, 0x000000, 1);
     g.strokeEllipse(cx - 24, 491, 34, 12);
@@ -289,10 +291,10 @@ export default class ColorScene extends Phaser.Scene {
     // Trunk wrinkle lines
     g.lineStyle(2, 0x000000, 0.4);
     for (let ty = 320; ty < 418; ty += 22) g.lineBetween(178, ty, 212, ty + 5);
-    // Tusks (small ovals)
-    g.lineStyle(2.5, 0x000000, 1);
-    g.strokeEllipse(cx - 28, 310, 18, 38);
-    g.strokeEllipse(cx + 28, 310, 18, 38);
+    // Tusks — small curved arcs at jaw level, outside the trunk
+    g.lineStyle(3, 0x000000, 1);
+    g.strokePoints([{ x: 164, y: 300 }, { x: 156, y: 320 }, { x: 164, y: 342 }], false);
+    g.strokePoints([{ x: 226, y: 300 }, { x: 234, y: 320 }, { x: 226, y: 342 }], false);
     // Body
     g.lineStyle(ls, 0x000000, 1);
     g.strokeEllipse(cx, 392, 204, 148);
@@ -314,203 +316,200 @@ export default class ColorScene extends Phaser.Scene {
   }
 
   // ─── LION ──────────────────────────────────────────────────────────────────
+  // cy=205 keeps mane top at y=107 and legs bottom at y=512, both within parchment
   _zones_lion() {
-    const cx = 195, cy = 248;
+    const cx = 195, cy = 205;
     // Mane (outer ring)
-    this._z(g => g.fillCircle(cx, cy, 118),
-      new Phaser.Geom.Circle(cx, cy, 118), Phaser.Geom.Circle.Contains);
+    this._z(g => g.fillCircle(cx, cy, 98),
+      new Phaser.Geom.Circle(cx, cy, 98), Phaser.Geom.Circle.Contains);
     // Face
-    this._z(g => g.fillCircle(cx, cy, 80),
-      new Phaser.Geom.Circle(cx, cy, 80), Phaser.Geom.Circle.Contains);
+    this._z(g => g.fillCircle(cx, cy, 66),
+      new Phaser.Geom.Circle(cx, cy, 66), Phaser.Geom.Circle.Contains);
     // Muzzle
-    this._z(g => g.fillEllipse(cx, cy + 32, 70, 48),
-      new Phaser.Geom.Ellipse(cx, cy + 32, 70, 48), Phaser.Geom.Ellipse.Contains);
-    // Body
-    this._z(g => g.fillEllipse(cx, cy + 222, 168, 118),
-      new Phaser.Geom.Ellipse(cx, cy + 222, 168, 118), Phaser.Geom.Ellipse.Contains);
-    // Front legs
+    this._z(g => g.fillEllipse(cx, cy + 28, 66, 44),
+      new Phaser.Geom.Ellipse(cx, cy + 28, 66, 44), Phaser.Geom.Ellipse.Contains);
+    // Body — center y=338 so body top (278) overlaps mane bottom (303) → seamless join
+    this._z(g => g.fillEllipse(cx, 338, 158, 122),
+      new Phaser.Geom.Ellipse(cx, 338, 158, 122), Phaser.Geom.Ellipse.Contains);
+    // Front legs — start inside body, bottom y=462
     this._z(g => {
-      g.fillRect(cx - 82, cy + 268, 46, 98);
-      g.fillRect(cx + 36, cy + 268, 46, 98);
-    }, new Phaser.Geom.Rectangle(cx - 82, cy + 268, 164, 98), Phaser.Geom.Rectangle.Contains);
+      g.fillRect(148, 390, 40, 72);
+      g.fillRect(207, 390, 40, 72);
+    }, new Phaser.Geom.Rectangle(148, 390, 99, 72), Phaser.Geom.Rectangle.Contains);
     // Tail tuft
-    this._z(g => g.fillCircle(cx + 108, cy + 218, 28),
-      new Phaser.Geom.Circle(cx + 108, cy + 218, 28), Phaser.Geom.Circle.Contains);
+    this._z(g => g.fillCircle(266, 322, 22),
+      new Phaser.Geom.Circle(266, 322, 22), Phaser.Geom.Circle.Contains);
   }
 
   _draw_lion(g) {
-    const cx = 195, cy = 248, ls = 3.5;
+    const cx = 195, cy = 205, ls = 3.5;
     // Mane
     g.lineStyle(ls, 0x000000, 1);
-    g.strokeCircle(cx, cy, 118);
+    g.strokeCircle(cx, cy, 98);
     // Mane texture spokes
     g.lineStyle(2, 0x000000, 0.4);
     for (let a = 0; a < 360; a += 24) {
       const r = a * Math.PI / 180;
-      g.lineBetween(cx + Math.cos(r) * 82, cy + Math.sin(r) * 82,
-        cx + Math.cos(r) * 115, cy + Math.sin(r) * 115);
+      g.lineBetween(cx + Math.cos(r) * 68, cy + Math.sin(r) * 68,
+        cx + Math.cos(r) * 95, cy + Math.sin(r) * 95);
     }
     // Ears (triangles peeking above mane)
     g.lineStyle(ls, 0x000000, 1);
     g.fillStyle(0xffffff, 1);
-    g.fillTriangle(cx - 72, cy - 80, cx - 48, cy - 80, cx - 60, cy - 108);
-    g.fillTriangle(cx + 48, cy - 80, cx + 72, cy - 80, cx + 60, cy - 108);
-    g.strokeTriangle(cx - 72, cy - 80, cx - 48, cy - 80, cx - 60, cy - 108);
-    g.strokeTriangle(cx + 48, cy - 80, cx + 72, cy - 80, cx + 60, cy - 108);
+    g.fillTriangle(cx - 68, cy - 68, cx - 46, cy - 68, cx - 57, cy - 95);
+    g.fillTriangle(cx + 46, cy - 68, cx + 68, cy - 68, cx + 57, cy - 95);
+    g.strokeTriangle(cx - 68, cy - 68, cx - 46, cy - 68, cx - 57, cy - 95);
+    g.strokeTriangle(cx + 46, cy - 68, cx + 68, cy - 68, cx + 57, cy - 95);
     // Face
     g.lineStyle(ls, 0x000000, 1);
-    g.strokeCircle(cx, cy, 80);
+    g.strokeCircle(cx, cy, 66);
     // Eyes
     g.fillStyle(0x000000, 1);
-    g.fillCircle(cx - 28, cy - 18, 10);
-    g.fillCircle(cx + 28, cy - 18, 10);
+    g.fillCircle(cx - 22, cy - 14, 9);
+    g.fillCircle(cx + 22, cy - 14, 9);
     g.fillStyle(0xffffff, 1);
-    g.fillCircle(cx - 24, cy - 21, 4);
-    g.fillCircle(cx + 24, cy - 21, 4);
+    g.fillCircle(cx - 19, cy - 17, 3);
+    g.fillCircle(cx + 19, cy - 17, 3);
     // Muzzle
     g.lineStyle(ls, 0x000000, 1);
-    g.strokeEllipse(cx, cy + 32, 70, 48);
+    g.strokeEllipse(cx, cy + 28, 66, 44);
     // Nose
     g.fillStyle(0x000000, 1);
-    g.fillTriangle(cx - 10, cy + 14, cx + 10, cy + 14, cx, cy + 26);
+    g.fillTriangle(cx - 8, cy + 12, cx + 8, cy + 12, cx, cy + 22);
     // Mouth
     g.lineStyle(2.5, 0x000000, 1);
-    g.lineBetween(cx, cy + 26, cx, cy + 36);
-    g.lineBetween(cx, cy + 36, cx - 16, cy + 44);
-    g.lineBetween(cx, cy + 36, cx + 16, cy + 44);
+    g.lineBetween(cx, cy + 22, cx, cy + 31);
+    g.lineBetween(cx, cy + 31, cx - 14, cy + 38);
+    g.lineBetween(cx, cy + 31, cx + 14, cy + 38);
     // Whiskers
     g.lineStyle(2, 0x000000, 0.8);
-    g.lineBetween(cx - 80, cy + 22, cx - 32, cy + 28);
-    g.lineBetween(cx - 80, cy + 32, cx - 32, cy + 34);
-    g.lineBetween(cx - 78, cy + 42, cx - 32, cy + 40);
-    g.lineBetween(cx + 80, cy + 22, cx + 32, cy + 28);
-    g.lineBetween(cx + 80, cy + 32, cx + 32, cy + 34);
-    g.lineBetween(cx + 78, cy + 42, cx + 32, cy + 40);
-    // Body
+    g.lineBetween(cx - 76, cy + 18, cx - 30, cy + 24);
+    g.lineBetween(cx - 76, cy + 28, cx - 30, cy + 30);
+    g.lineBetween(cx - 74, cy + 38, cx - 30, cy + 36);
+    g.lineBetween(cx + 76, cy + 18, cx + 30, cy + 24);
+    g.lineBetween(cx + 76, cy + 28, cx + 30, cy + 30);
+    g.lineBetween(cx + 74, cy + 38, cx + 30, cy + 36);
+    // Body — top (y=277) overlaps mane bottom (y=303): seamless connection
     g.lineStyle(ls, 0x000000, 1);
-    g.strokeEllipse(cx, cy + 222, 168, 118);
+    g.strokeEllipse(cx, 338, 158, 122);
     // Front legs
-    g.strokeRect(cx - 82, cy + 268, 46, 98);
-    g.strokeRect(cx + 36, cy + 268, 46, 98);
+    g.strokeRect(148, 390, 40, 72);
+    g.strokeRect(207, 390, 40, 72);
     // Paws
     g.lineStyle(2.5, 0x000000, 1);
-    g.strokeEllipse(cx - 59, cy + 370, 50, 18);
-    g.strokeEllipse(cx + 59, cy + 370, 50, 18);
+    g.strokeEllipse(168, 464, 46, 16);
+    g.strokeEllipse(227, 464, 46, 16);
     // Claw lines
     g.lineStyle(2, 0x000000, 0.5);
-    [-72, -60, -46].forEach(ox => g.lineBetween(cx + ox, cy + 369, cx + ox, cy + 380));
-    [46, 58, 72].forEach(ox => g.lineBetween(cx + ox, cy + 369, cx + ox, cy + 380));
-    // Tail line + tuft
+    [152, 162, 172].forEach(px => g.lineBetween(px, 462, px, 471));
+    [211, 221, 231].forEach(px => g.lineBetween(px, 462, px, 471));
+    // Tail curve + tuft
     g.lineStyle(ls, 0x000000, 1);
-    g.strokePoints([{ x: cx + 82, y: cy + 178 }, { x: cx + 106, y: cy + 196 },
-      { x: cx + 116, y: cy + 222 }], false);
-    g.strokeCircle(cx + 108, cy + 218, 28);
+    g.strokePoints([{ x: 264, y: 300 }, { x: 276, y: 314 }, { x: 270, y: 328 }], false);
+    g.strokeCircle(266, 322, 22);
     g.lineStyle(2, 0x000000, 0.4);
     for (let a = 0; a < 360; a += 30) {
       const r = a * Math.PI / 180;
-      g.lineBetween(cx + 108 + Math.cos(r) * 22, cy + 218 + Math.sin(r) * 22,
-        cx + 108 + Math.cos(r) * 30, cy + 218 + Math.sin(r) * 30);
+      g.lineBetween(262 + Math.cos(r) * 17, 368 + Math.sin(r) * 17,
+        262 + Math.cos(r) * 24, 368 + Math.sin(r) * 24);
     }
   }
 
   // ─── RABBIT ────────────────────────────────────────────────────────────────
+  // Ears centered at y=145 (top y=83), head at y=258 (top y=193) — only 12px overlap at base
   _zones_rabbit() {
-    const cx = 195, cy = 310;
-    // Left outer ear
-    this._z(g => g.fillEllipse(cx - 42, cy - 140, 54, 148),
-      new Phaser.Geom.Ellipse(cx - 42, cy - 140, 54, 148), Phaser.Geom.Ellipse.Contains);
+    const cx = 195;
+    // Left outer ear — sits above head, base just touches head crown
+    this._z(g => g.fillEllipse(155, 145, 52, 124),
+      new Phaser.Geom.Ellipse(155, 145, 52, 124), Phaser.Geom.Ellipse.Contains);
     // Right outer ear
-    this._z(g => g.fillEllipse(cx + 42, cy - 140, 54, 148),
-      new Phaser.Geom.Ellipse(cx + 42, cy - 140, 54, 148), Phaser.Geom.Ellipse.Contains);
+    this._z(g => g.fillEllipse(235, 145, 52, 124),
+      new Phaser.Geom.Ellipse(235, 145, 52, 124), Phaser.Geom.Ellipse.Contains);
     // Left inner ear (pink)
-    this._z(g => g.fillEllipse(cx - 42, cy - 140, 28, 96),
-      new Phaser.Geom.Ellipse(cx - 42, cy - 140, 28, 96), Phaser.Geom.Ellipse.Contains);
+    this._z(g => g.fillEllipse(155, 143, 28, 84),
+      new Phaser.Geom.Ellipse(155, 143, 28, 84), Phaser.Geom.Ellipse.Contains);
     // Right inner ear (pink)
-    this._z(g => g.fillEllipse(cx + 42, cy - 140, 28, 96),
-      new Phaser.Geom.Ellipse(cx + 42, cy - 140, 28, 96), Phaser.Geom.Ellipse.Contains);
-    // Head
-    this._z(g => g.fillCircle(cx, cy - 52, 70),
-      new Phaser.Geom.Circle(cx, cy - 52, 70), Phaser.Geom.Circle.Contains);
+    this._z(g => g.fillEllipse(235, 143, 28, 84),
+      new Phaser.Geom.Ellipse(235, 143, 28, 84), Phaser.Geom.Ellipse.Contains);
+    // Head — top y=193 meets ear bottom y=207 (small overlap at base only)
+    this._z(g => g.fillCircle(cx, 258, 65),
+      new Phaser.Geom.Circle(cx, 258, 65), Phaser.Geom.Circle.Contains);
     // Muzzle
-    this._z(g => g.fillEllipse(cx, cy - 22, 62, 44),
-      new Phaser.Geom.Ellipse(cx, cy - 22, 62, 44), Phaser.Geom.Ellipse.Contains);
+    this._z(g => g.fillEllipse(cx, 290, 60, 42),
+      new Phaser.Geom.Ellipse(cx, 290, 60, 42), Phaser.Geom.Ellipse.Contains);
     // Body
-    this._z(g => g.fillEllipse(cx, cy + 102, 172, 200),
-      new Phaser.Geom.Ellipse(cx, cy + 102, 172, 200), Phaser.Geom.Ellipse.Contains);
+    this._z(g => g.fillEllipse(cx, 410, 170, 192),
+      new Phaser.Geom.Ellipse(cx, 410, 170, 192), Phaser.Geom.Ellipse.Contains);
     // Tail
-    this._z(g => g.fillCircle(cx + 98, cy + 82, 32),
-      new Phaser.Geom.Circle(cx + 98, cy + 82, 32), Phaser.Geom.Circle.Contains);
+    this._z(g => g.fillCircle(302, 382, 28),
+      new Phaser.Geom.Circle(302, 382, 28), Phaser.Geom.Circle.Contains);
     // Front paws
     this._z(g => {
-      g.fillEllipse(cx - 42, cy + 205, 64, 30);
-      g.fillEllipse(cx + 42, cy + 205, 64, 30);
-    }, new Phaser.Geom.Rectangle(cx - 74, cy + 192, 148, 42), Phaser.Geom.Rectangle.Contains);
+      g.fillEllipse(155, 504, 64, 28);
+      g.fillEllipse(235, 504, 64, 28);
+    }, new Phaser.Geom.Rectangle(123, 492, 144, 40), Phaser.Geom.Rectangle.Contains);
   }
 
   _draw_rabbit(g) {
-    const cx = 195, cy = 310, ls = 3.5;
-    // Outer ears
+    const cx = 195, ls = 3.5;
+    // Outer ears (drawn first so head outline goes on top)
     g.lineStyle(ls, 0x000000, 1);
-    g.strokeEllipse(cx - 42, cy - 140, 54, 148);
-    g.strokeEllipse(cx + 42, cy - 140, 54, 148);
+    g.strokeEllipse(155, 145, 52, 124);
+    g.strokeEllipse(235, 145, 52, 124);
     // Inner ears
     g.lineStyle(2, 0x000000, 0.55);
-    g.strokeEllipse(cx - 42, cy - 140, 28, 96);
-    g.strokeEllipse(cx + 42, cy - 140, 28, 96);
-    // Head
+    g.strokeEllipse(155, 143, 28, 84);
+    g.strokeEllipse(235, 143, 28, 84);
+    // Head (outline drawn over ear base for clean look)
     g.lineStyle(ls, 0x000000, 1);
-    g.strokeCircle(cx, cy - 52, 70);
-    // Eyes (big cute)
+    g.strokeCircle(cx, 258, 65);
+    // Eyes
     g.fillStyle(0x000000, 1);
-    g.fillCircle(cx - 26, cy - 66, 11);
-    g.fillCircle(cx + 26, cy - 66, 11);
+    g.fillCircle(cx - 24, 244, 10);
+    g.fillCircle(cx + 24, 244, 10);
     g.fillStyle(0xffffff, 1);
-    g.fillCircle(cx - 22, cy - 70, 4);
-    g.fillCircle(cx + 22, cy - 70, 4);
+    g.fillCircle(cx - 20, 241, 4);
+    g.fillCircle(cx + 20, 241, 4);
     // Nose
     g.fillStyle(0x000000, 1);
-    g.fillEllipse(cx, cy - 32, 14, 10);
+    g.fillEllipse(cx, 276, 12, 9);
     // Muzzle
     g.lineStyle(ls, 0x000000, 1);
-    g.strokeEllipse(cx, cy - 22, 62, 44);
+    g.strokeEllipse(cx, 290, 60, 42);
     // Mouth
     g.lineStyle(2.5, 0x000000, 1);
-    g.lineBetween(cx, cy - 27, cx, cy - 16);
-    g.lineBetween(cx, cy - 16, cx - 16, cy - 8);
-    g.lineBetween(cx, cy - 16, cx + 16, cy - 8);
+    g.lineBetween(cx, 281, cx, 291);
+    g.lineBetween(cx, 291, cx - 15, 299);
+    g.lineBetween(cx, 291, cx + 15, 299);
     // Whiskers
     g.lineStyle(2, 0x000000, 0.8);
-    g.lineBetween(cx - 82, cy - 22, cx - 28, cy - 20);
-    g.lineBetween(cx - 82, cy - 14, cx - 28, cy - 16);
-    g.lineBetween(cx + 28, cy - 20, cx + 82, cy - 22);
-    g.lineBetween(cx + 28, cy - 16, cx + 82, cy - 14);
+    g.lineBetween(cx - 80, 284, cx - 28, 287);
+    g.lineBetween(cx - 80, 293, cx - 28, 291);
+    g.lineBetween(cx + 28, 287, cx + 80, 284);
+    g.lineBetween(cx + 28, 291, cx + 80, 293);
     // Body
     g.lineStyle(ls, 0x000000, 1);
-    g.strokeEllipse(cx, cy + 102, 172, 200);
+    g.strokeEllipse(cx, 410, 170, 192);
     // Belly tuft
-    g.lineStyle(2, 0x000000, 0.45);
-    g.strokeEllipse(cx, cy + 95, 88, 120);
+    g.lineStyle(2, 0x000000, 0.42);
+    g.strokeEllipse(cx, 402, 86, 116);
     // Tail
     g.lineStyle(ls, 0x000000, 1);
-    g.strokeCircle(cx + 98, cy + 82, 32);
+    g.strokeCircle(302, 382, 28);
     g.lineStyle(2, 0x000000, 0.4);
     for (let a = 0; a < 360; a += 30) {
       const r = a * Math.PI / 180;
-      g.lineBetween(cx + 98 + Math.cos(r) * 25, cy + 82 + Math.sin(r) * 25,
-        cx + 98 + Math.cos(r) * 34, cy + 82 + Math.sin(r) * 34);
+      g.lineBetween(302 + Math.cos(r) * 22, 382 + Math.sin(r) * 22,
+        302 + Math.cos(r) * 30, 382 + Math.sin(r) * 30);
     }
     // Paws
     g.lineStyle(ls, 0x000000, 1);
-    g.strokeEllipse(cx - 42, cy + 205, 64, 30);
-    g.strokeEllipse(cx + 42, cy + 205, 64, 30);
+    g.strokeEllipse(155, 504, 64, 28);
+    g.strokeEllipse(235, 504, 64, 28);
     // Toe lines
     g.lineStyle(2, 0x000000, 0.5);
-    [cx - 56, cx - 44, cx - 30].forEach(px => {
-      g.lineBetween(px, cy + 203, px, cy + 218);
-    });
-    [cx + 30, cx + 44, cx + 56].forEach(px => {
-      g.lineBetween(px, cy + 203, px, cy + 218);
-    });
+    [131, 143, 155, 167].forEach(px => g.lineBetween(px, 502, px, 516));
+    [211, 223, 235, 247].forEach(px => g.lineBetween(px, 502, px, 516));
   }
 
   // ─── ARK ───────────────────────────────────────────────────────────────────
