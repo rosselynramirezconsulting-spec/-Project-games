@@ -80,7 +80,7 @@ export default class ColorScene extends Phaser.Scene {
         if (a < 30) { od[i + 3] = 0; continue; }          // transparent bg → keep transparent
 
         const bright = orig[i] * 0.299 + orig[i + 1] * 0.587 + orig[i + 2] * 0.114;
-        if (bright < 90) {                                  // dark pixel → black outline
+        if (bright < 20) {                                  // true black ink stroke → black outline
           od[i] = od[i + 1] = od[i + 2] = 0; od[i + 3] = 255; continue;
         }
 
