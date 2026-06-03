@@ -10,7 +10,6 @@ export default class ColorScene extends Phaser.Scene {
 
     this._drawBg(W, H);
 
-    // Header
     this.add.rectangle(W / 2, 36, W, 72, 0x000000, 0.45).setDepth(10);
     this.add.text(W / 2, 16, 'Coloring Book', {
       fontSize: '28px', fontFamily: 'Arial', fontStyle: 'bold',
@@ -58,23 +57,58 @@ export default class ColorScene extends Phaser.Scene {
     this._loadPage();
   }
 
-  // Convert a loaded Phaser texture to grayscale; cache the result.
-  _gray(key) {
-    const gk = key + '-gray';
-    if (this.textures.exists(gk)) return gk;
+  // Extract only the black outline pixels from a texture.
+  // Dark pixels AND alpha-edge pixels → black+opaque; everything else → transparent.
+  // The result is displayed ON TOP of colored zones so outlines always show through.
+  _outlineKey(key) {
+    const ok = key + '-ol';
+    if (this.textures.exists(ok)) return ok;
     const src = this.textures.get(key).getSourceImage();
-    const c = document.createElement('canvas');
-    c.width = src.width; c.height = src.height;
-    const ctx = c.getContext('2d');
+    const TW = src.width, TH = src.height;
+    const tmp = document.createElement('canvas');
+    tmp.width = TW; tmp.height = TH;
+    const ctx = tmp.getContext('2d');
     ctx.drawImage(src, 0, 0);
-    const id = ctx.getImageData(0, 0, c.width, c.height);
-    for (let i = 0; i < id.data.length; i += 4) {
-      const v = id.data[i] * 0.299 + id.data[i + 1] * 0.587 + id.data[i + 2] * 0.114;
-      id.data[i] = id.data[i + 1] = id.data[i + 2] = v;
+    const orig = ctx.getImageData(0, 0, TW, TH).data;
+    const out  = ctx.createImageData(TW, TH);
+    const od   = out.data;
+
+    for (let y = 0; y < TH; y++) {
+      for (let x = 0; x < TW; x++) {
+        const i = (y * TW + x) * 4;
+        const a = orig[i + 3];
+        if (a < 30) { od[i + 3] = 0; continue; }          // transparent bg → keep transparent
+
+        const bright = orig[i] * 0.299 + orig[i + 1] * 0.587 + orig[i + 2] * 0.114;
+        if (bright < 90) {                                  // dark pixel → black outline
+          od[i] = od[i + 1] = od[i + 2] = 0; od[i + 3] = 255; continue;
+        }
+
+        // Alpha-edge pixel (shape boundary for flat-colored sprites) → black outline
+        let edge = false;
+        for (let dy = -1; dy <= 1 && !edge; dy++) {
+          for (let dx = -1; dx <= 1 && !edge; dx++) {
+            if (!dx && !dy) continue;
+            const nx = x + dx, ny = y + dy;
+            if (nx < 0 || nx >= TW || ny < 0 || ny >= TH) { edge = true; break; }
+            if (orig[(ny * TW + nx) * 4 + 3] < 30) edge = true;
+          }
+        }
+        if (edge) { od[i] = od[i + 1] = od[i + 2] = 0; od[i + 3] = 255; continue; }
+
+        od[i + 3] = 0; // interior non-dark pixel → transparent (zone color shows through)
+      }
     }
-    ctx.putImageData(id, 0, 0);
-    this.textures.addCanvas(gk, c);
-    return gk;
+
+    ctx.putImageData(out, 0, 0);
+    this.textures.addCanvas(ok, tmp);
+    return ok;
+  }
+
+  // Show the outline image above the color zones
+  _showOutline(key, cx, cy, S) {
+    const img = this.add.image(cx, cy, this._outlineKey(key)).setScale(S).setDepth(6);
+    this._zones.push(img);
   }
 
   _drawBg(W, H) {
@@ -138,13 +172,7 @@ export default class ColorScene extends Phaser.Scene {
     })[this._pages[this._page]]?.();
   }
 
-  // Show grayscale sprite as the coloring template (depth 3)
-  _showSprite(key, cx, cy, S) {
-    const img = this.add.image(cx, cy, this._gray(key)).setScale(S).setDepth(3);
-    this._zones.push(img);
-  }
-
-  // Zone: invisible until tapped, then fills with selected color
+  // Zone: invisible until tapped, fills with solid color; outline image sits above it
   _z(drawFn, geom, geomContains) {
     const gfx = this.add.graphics().setDepth(4);
     let active = false, color = 0xffffff;
@@ -162,50 +190,44 @@ export default class ColorScene extends Phaser.Scene {
     };
   }
 
-  // ── Noah  (48×64 PNG — exact game sprite shown in grayscale) ──────────
+  // ── Noah  (48×64 PNG) ─────────────────────────────────────────────────
   _pageNoah() {
     const cx = 188, cy = 300, S = 5.5;
-    this._showSprite('noah', cx, cy, S);
+    this._showOutline('noah', cx, cy, S);
     const { tx, ty, ts } = this._mkT(48, 64, cx, cy, S);
 
-    // Robe + skirt
     this._z((g, c) => {
-      g.fillStyle(c, 0.82);
+      g.fillStyle(c, 0.9);
       g.fillRect(tx(10), ty(30), ts(28), ts(24));
       g.fillTriangle(tx(10), ty(54), tx(38), ty(54), tx(24), ty(64));
     }, new Phaser.Geom.Rectangle(tx(10), ty(30), ts(28), ts(34)), Phaser.Geom.Rectangle.Contains);
 
-    // Face / head
     this._z((g, c) => {
-      g.fillStyle(c, 0.82); g.fillCircle(tx(24), ty(18), ts(14));
+      g.fillStyle(c, 0.9); g.fillCircle(tx(24), ty(18), ts(14));
     }, new Phaser.Geom.Circle(tx(24), ty(18), ts(14)), Phaser.Geom.Circle.Contains);
 
-    // Beard
     this._z((g, c) => {
-      g.fillStyle(c, 0.82);
+      g.fillStyle(c, 0.9);
       g.fillTriangle(tx(16), ty(26), tx(32), ty(26), tx(24), ty(38));
     }, new Phaser.Geom.Triangle(tx(16), ty(26), tx(32), ty(26), tx(24), ty(38)), Phaser.Geom.Triangle.Contains);
 
-    // Hat
     this._z((g, c) => {
-      g.fillStyle(c, 0.82); g.fillRect(tx(10), ty(4), ts(28), ts(14));
+      g.fillStyle(c, 0.9); g.fillRect(tx(10), ty(4), ts(28), ts(14));
     }, new Phaser.Geom.Rectangle(tx(10), ty(4), ts(28), ts(14)), Phaser.Geom.Rectangle.Contains);
 
-    // Staff
     this._z((g, c) => {
-      g.fillStyle(c, 0.82); g.fillRect(tx(38), ty(20), ts(4), ts(44));
+      g.fillStyle(c, 0.9); g.fillRect(tx(38), ty(20), ts(4), ts(44));
     }, new Phaser.Geom.Rectangle(tx(38), ty(20), ts(4), ts(44)), Phaser.Geom.Rectangle.Contains);
   }
 
-  // ── Elephant  (40×40 texture — exact game sprite in grayscale) ────────
+  // ── Elephant  (40×40) ────────────────────────────────────────────────
   _pageElephant() {
     const cx = 190, cy = 310, S = 6.5;
-    this._showSprite('elephant', cx, cy, S);
+    this._showOutline('elephant', cx, cy, S);
     const { tx, ty, ts } = this._mkT(40, 40, cx, cy, S);
 
-    // Body + head + trunk + legs
     this._z((g, c) => {
-      g.fillStyle(c, 0.82);
+      g.fillStyle(c, 0.9);
       g.fillCircle(tx(20), ty(20), ts(14));
       g.fillCircle(tx(20), ty(8),  ts(9));
       g.fillRect(tx(12), ty(14), ts(4), ts(14));
@@ -213,89 +235,78 @@ export default class ColorScene extends Phaser.Scene {
       g.fillRect(tx(26), ty(30), ts(6), ts(10));
     }, new Phaser.Geom.Circle(tx(20), ty(16), ts(18)), Phaser.Geom.Circle.Contains);
 
-    // Ear (pink zone)
     this._z((g, c) => {
-      g.fillStyle(c, 0.82); g.fillEllipse(tx(10), ty(6), ts(8), ts(10));
+      g.fillStyle(c, 0.9); g.fillEllipse(tx(10), ty(6), ts(8), ts(10));
     }, new Phaser.Geom.Ellipse(tx(10), ty(6), ts(8), ts(10)), Phaser.Geom.Ellipse.Contains);
   }
 
-  // ── Lion  (40×40 texture — exact game sprite in grayscale) ────────────
+  // ── Lion  (40×40) ─────────────────────────────────────────────────────
   _pageLion() {
     const cx = 195, cy = 295, S = 6.5;
-    this._showSprite('lion', cx, cy, S);
+    this._showOutline('lion', cx, cy, S);
     const { tx, ty, ts } = this._mkT(40, 40, cx, cy, S);
 
-    // Mane
     this._z((g, c) => {
-      g.fillStyle(c, 0.82); g.fillCircle(tx(20), ty(20), ts(18));
+      g.fillStyle(c, 0.9); g.fillCircle(tx(20), ty(20), ts(18));
     }, new Phaser.Geom.Circle(tx(20), ty(20), ts(18)), Phaser.Geom.Circle.Contains);
 
-    // Face
     this._z((g, c) => {
-      g.fillStyle(c, 0.82); g.fillCircle(tx(20), ty(20), ts(13));
+      g.fillStyle(c, 0.9); g.fillCircle(tx(20), ty(20), ts(13));
     }, new Phaser.Geom.Circle(tx(20), ty(20), ts(13)), Phaser.Geom.Circle.Contains);
 
-    // Nose
     this._z((g, c) => {
-      g.fillStyle(c, 0.82); g.fillCircle(tx(20), ty(22), ts(4));
+      g.fillStyle(c, 0.9); g.fillCircle(tx(20), ty(22), ts(4));
     }, new Phaser.Geom.Circle(tx(20), ty(22), ts(4)), Phaser.Geom.Circle.Contains);
   }
 
-  // ── Rabbit  (40×40 texture — exact game sprite in grayscale) ──────────
+  // ── Rabbit  (40×40) ───────────────────────────────────────────────────
   _pageRabbit() {
     const cx = 195, cy = 295, S = 6.5;
-    this._showSprite('rabbit', cx, cy, S);
+    this._showOutline('rabbit', cx, cy, S);
     const { tx, ty, ts } = this._mkT(40, 40, cx, cy, S);
 
-    // Body + head + outer ears
     this._z((g, c) => {
-      g.fillStyle(c, 0.82);
+      g.fillStyle(c, 0.9);
       g.fillCircle(tx(20), ty(24), ts(13));
       g.fillCircle(tx(20), ty(12), ts(9));
       g.fillRect(tx(14), ty(0), ts(6), ts(14));
       g.fillRect(tx(22), ty(0), ts(6), ts(14));
     }, new Phaser.Geom.Circle(tx(20), ty(16), ts(22)), Phaser.Geom.Circle.Contains);
 
-    // Inner ears
     this._z((g, c) => {
-      g.fillStyle(c, 0.82);
+      g.fillStyle(c, 0.9);
       g.fillRect(tx(15), ty(1), ts(4), ts(11));
       g.fillRect(tx(23), ty(1), ts(4), ts(11));
     }, new Phaser.Geom.Rectangle(tx(15), ty(1), ts(12), ts(11)), Phaser.Geom.Rectangle.Contains);
 
-    // Nose
     this._z((g, c) => {
-      g.fillStyle(c, 0.82); g.fillCircle(tx(20), ty(17), ts(2));
+      g.fillStyle(c, 0.9); g.fillCircle(tx(20), ty(17), ts(2));
     }, new Phaser.Geom.Circle(tx(20), ty(17), ts(2)), Phaser.Geom.Circle.Contains);
   }
 
-  // ── Ark  (120×100 texture — exact game sprite in grayscale) ───────────
+  // ── Ark  (120×100) ────────────────────────────────────────────────────
   _pageArk() {
     const cx = 195, cy = 305, S = 2.8;
-    this._showSprite('ark', cx, cy, S);
+    this._showOutline('ark', cx, cy, S);
     const { tx, ty, ts } = this._mkT(120, 100, cx, cy, S);
 
-    // Hull
     this._z((g, c) => {
-      g.fillStyle(c, 0.82); g.fillRect(tx(0), ty(50), ts(120), ts(50));
+      g.fillStyle(c, 0.9); g.fillRect(tx(0), ty(50), ts(120), ts(50));
     }, new Phaser.Geom.Rectangle(tx(0), ty(50), ts(120), ts(50)), Phaser.Geom.Rectangle.Contains);
 
-    // Cabin
     this._z((g, c) => {
-      g.fillStyle(c, 0.82);
+      g.fillStyle(c, 0.9);
       g.fillRect(tx(20), ty(20), ts(80), ts(35));
       g.fillRect(tx(35), ty(5),  ts(50), ts(20));
     }, new Phaser.Geom.Rectangle(tx(20), ty(5), ts(80), ts(50)), Phaser.Geom.Rectangle.Contains);
 
-    // Roof
     this._z((g, c) => {
-      g.fillStyle(c, 0.82);
+      g.fillStyle(c, 0.9);
       g.fillTriangle(tx(15), ty(20), tx(105), ty(20), tx(60), ty(2));
     }, new Phaser.Geom.Triangle(tx(15), ty(20), tx(105), ty(20), tx(60), ty(2)), Phaser.Geom.Triangle.Contains);
 
-    // Windows
     this._z((g, c) => {
-      g.fillStyle(c, 0.82);
+      g.fillStyle(c, 0.9);
       [28, 53, 78].forEach(wx => g.fillRect(tx(wx), ty(28), ts(14), ts(12)));
     }, new Phaser.Geom.Rectangle(tx(28), ty(28), ts(64), ts(12)), Phaser.Geom.Rectangle.Contains);
   }
