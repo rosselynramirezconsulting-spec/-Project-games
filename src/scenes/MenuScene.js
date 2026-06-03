@@ -90,8 +90,8 @@ export default class MenuScene extends Phaser.Scene {
     const colorBtnY = btnY + 76;
     const colorBg = this.add.rectangle(W / 2, colorBtnY, 200, 48, 0x228833)
       .setInteractive({ useHandCursor: true });
-    this.add.text(W / 2, colorBtnY, 'Colorear', {
-      fontSize: '22px', fontFamily: 'Arial', fontStyle: 'bold',
+    this.add.text(W / 2, colorBtnY, 'Coloring Book', {
+      fontSize: '20px', fontFamily: 'Arial', fontStyle: 'bold',
       fill: '#ffffff', stroke: '#115522', strokeThickness: 4,
     }).setOrigin(0.5);
     colorBg.on('pointerdown', () => this.scene.start('Color'));

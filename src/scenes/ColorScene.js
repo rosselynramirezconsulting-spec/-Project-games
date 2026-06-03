@@ -3,16 +3,17 @@ export default class ColorScene extends Phaser.Scene {
 
   create() {
     const W = 390, H = 844;
-    this._sel   = 0xff3333;
-    this._page  = 0;
-    this._pages = ['noah', 'elephant', 'lion', 'rabbit', 'ark'];
-    this._zones = [];
+    this._sel    = 0xff3333;
+    this._page   = 0;
+    this._pages  = ['noah', 'elephant', 'lion', 'rabbit', 'ark'];
+    this._zones  = [];
+    this._sprite = null;
 
     this._drawBg(W, H);
 
     // Header
     this.add.rectangle(W / 2, 36, W, 72, 0x000000, 0.45).setDepth(10);
-    this.add.text(W / 2, 16, 'Colorear', {
+    this.add.text(W / 2, 16, 'Coloring Book', {
       fontSize: '28px', fontFamily: 'Arial', fontStyle: 'bold',
       fill: '#ffe066', stroke: '#7a4200', strokeThickness: 5,
     }).setOrigin(0.5).setDepth(11);
@@ -45,9 +46,9 @@ export default class ColorScene extends Phaser.Scene {
     this._buildPalette(W, H);
 
     // Limpiar button
-    const clrBtn = this.add.rectangle(90, H - 32, 140, 44, 0x226622)
+    const clrBtn = this.add.rectangle(90, H - 32, 130, 44, 0x226622)
       .setInteractive({ useHandCursor: true }).setDepth(10);
-    this.add.text(90, H - 32, 'Limpiar', {
+    this.add.text(90, H - 32, 'Clear', {
       fontSize: '20px', fontFamily: 'Arial', fontStyle: 'bold', fill: '#ffffff',
     }).setOrigin(0.5).setDepth(11);
     clrBtn.on('pointerdown', () => this._loadPage());
@@ -88,8 +89,8 @@ export default class ColorScene extends Phaser.Scene {
     const y0 = H - 148;
 
     this.add.rectangle(W / 2, H - 118, W, 122, 0xfff0cc, 0.95).setDepth(9);
-    this.add.text(W / 2, H - 192, 'Elige un color:', {
-      fontSize: '14px', fontFamily: 'Arial', fontStyle: 'bold', fill: '#885500',
+    this.add.text(W / 2, H - 192, 'Tap a part, then pick a color:', {
+      fontSize: '13px', fontFamily: 'Arial', fontStyle: 'bold', fill: '#885500',
     }).setOrigin(0.5).setDepth(10);
 
     this._swatches = COLS.map((color, i) => {
@@ -116,196 +117,176 @@ export default class ColorScene extends Phaser.Scene {
   _loadPage() {
     this._zones.forEach(z => z.destroy());
     this._zones = [];
-    const LABELS = ['Noah', 'Elefante', 'Leon', 'Conejo', 'El Arca'];
+    if (this._sprite) { this._sprite.destroy(); this._sprite = null; }
+
+    const LABELS = ['Noah', 'Elephant', 'Lion', 'Rabbit', 'The Ark'];
     this._subTitle.setText(`${LABELS[this._page]}   (${this._page + 1} / ${this._pages.length})`);
-    ({ noah: () => this._pageNoah(),
-       elephant: () => this._pageElephant(),
-       lion: () => this._pageLion(),
-       rabbit: () => this._pageRabbit(),
-       ark: () => this._pageArk(),
-    })[this._pages[this._page]]?.();
+
+    const page = this._pages[this._page];
+    const cfg  = {
+      noah:     { key: 'noah',     tw: 48,  th: 64,  cx: 195, cy: 295, S: 4.0 },
+      elephant: { key: 'elephant', tw: 40,  th: 40,  cx: 195, cy: 305, S: 5.0 },
+      lion:     { key: 'lion',     tw: 40,  th: 40,  cx: 195, cy: 295, S: 5.0 },
+      rabbit:   { key: 'rabbit',   tw: 40,  th: 40,  cx: 195, cy: 295, S: 5.0 },
+      ark:      { key: 'ark',      tw: 120, th: 100, cx: 195, cy: 305, S: 2.8 },
+    }[page];
+
+    this._sprite = this.add.image(cfg.cx, cfg.cy, cfg.key).setScale(cfg.S).setDepth(3);
+
+    const { tw, th, cx, cy, S } = cfg;
+    // Helpers: transform from sprite local coords → screen coords
+    const tx = lx => cx + (lx - tw / 2) * S;
+    const ty = ly => cy + (ly - th / 2) * S;
+    const ts = v  => v * S;
+
+    ({
+      noah:     () => this._pageNoah(tx, ty, ts),
+      elephant: () => this._pageElephant(tx, ty, ts),
+      lion:     () => this._pageLion(tx, ty, ts),
+      rabbit:   () => this._pageRabbit(tx, ty, ts),
+      ark:      () => this._pageArk(tx, ty, ts),
+    })[page]?.();
   }
 
-  _z(drawFn, geom, geomContains, defColor) {
-    const gfx = this.add.graphics().setDepth(5);
-    let color = defColor;
-    const redraw = () => { gfx.clear(); drawFn(gfx, color); };
-    redraw();
+  // Zone helper — overlays a semi-transparent fill on top of the sprite
+  _z(drawFn, geom, geomContains) {
+    const gfx = this.add.graphics().setDepth(4);
+    let active = false, color = 0xffffff;
+    const redraw = () => { gfx.clear(); if (active) drawFn(gfx, color, 0.78); };
     gfx.setInteractive(geom, geomContains);
-    gfx.on('pointerdown', () => { color = this._sel; redraw(); });
+    gfx.on('pointerdown', () => { active = true; color = this._sel; redraw(); });
     this._zones.push(gfx);
     return gfx;
   }
 
-  // ── Noah ──────────────────────────────────────────────────────────────
-  _pageNoah() {
-    const S = 4, cx = 195, oy = 165;
-    const ox = cx - 24 * S;
-
+  // ── Noah  (48×64, drawNoah geometry) ─────────────────────────────────
+  _pageNoah(tx, ty, ts) {
     // Robe
-    this._z((g, c) => {
-      g.fillStyle(c); g.fillRect(ox+10*S, oy+30*S, 28*S, 28*S);
-      g.lineStyle(3, 0x222222); g.strokeRect(ox+10*S, oy+30*S, 28*S, 28*S);
-    }, new Phaser.Geom.Rectangle(ox+10*S, oy+30*S, 28*S, 28*S), Phaser.Geom.Rectangle.Contains, 0xeeddcc);
+    this._z((g, c, a) => {
+      g.fillStyle(c, a);
+      g.fillRect(tx(10), ty(30), ts(28), ts(24));
+      g.fillTriangle(tx(10), ty(54), tx(38), ty(54), tx(24), ty(64));
+    }, new Phaser.Geom.Rectangle(tx(10), ty(30), ts(28), ts(34)), Phaser.Geom.Rectangle.Contains);
 
-    // Head / face
-    this._z((g, c) => {
-      g.fillStyle(c); g.fillCircle(cx, oy+18*S, 13*S);
-      g.lineStyle(3, 0x222222); g.strokeCircle(cx, oy+18*S, 13*S);
-    }, new Phaser.Geom.Circle(cx, oy+18*S, 13*S), Phaser.Geom.Circle.Contains, 0xf5cba7);
+    // Face / head circle
+    this._z((g, c, a) => {
+      g.fillStyle(c, a); g.fillCircle(tx(24), ty(18), ts(14));
+    }, new Phaser.Geom.Circle(tx(24), ty(18), ts(14)), Phaser.Geom.Circle.Contains);
 
-    // Beard
-    this._z((g, c) => {
-      g.fillStyle(c);
-      g.fillTriangle(ox+16*S, oy+26*S, ox+32*S, oy+26*S, cx, oy+38*S);
-      g.lineStyle(3, 0x222222);
-      g.strokePoints([{x:ox+16*S,y:oy+26*S},{x:ox+32*S,y:oy+26*S},{x:cx,y:oy+38*S}], true);
-    }, new Phaser.Geom.Triangle(ox+16*S, oy+26*S, ox+32*S, oy+26*S, cx, oy+38*S), Phaser.Geom.Triangle.Contains, 0xffffff);
+    // Beard triangle
+    this._z((g, c, a) => {
+      g.fillStyle(c, a);
+      g.fillTriangle(tx(16), ty(26), tx(32), ty(26), tx(24), ty(38));
+    }, new Phaser.Geom.Triangle(tx(16), ty(26), tx(32), ty(26), tx(24), ty(38)), Phaser.Geom.Triangle.Contains);
 
     // Hat
-    this._z((g, c) => {
-      g.fillStyle(c); g.fillRect(ox+10*S, oy+4*S, 28*S, 14*S);
-      g.lineStyle(3, 0x222222); g.strokeRect(ox+10*S, oy+4*S, 28*S, 14*S);
-    }, new Phaser.Geom.Rectangle(ox+10*S, oy+4*S, 28*S, 14*S), Phaser.Geom.Rectangle.Contains, 0x6b4226);
+    this._z((g, c, a) => {
+      g.fillStyle(c, a); g.fillRect(tx(10), ty(4), ts(28), ts(14));
+    }, new Phaser.Geom.Rectangle(tx(10), ty(4), ts(28), ts(14)), Phaser.Geom.Rectangle.Contains);
   }
 
-  // ── Elephant ──────────────────────────────────────────────────────────
-  _pageElephant() {
-    const S = 5, cx = 195, cy = 310;
-    const ox = cx - 20*S, oy = cy - 22*S;
-
-    // Body + head
-    this._z((g, c) => {
-      g.fillStyle(c);
-      g.fillCircle(ox+20*S, oy+20*S, 14*S);
-      g.fillCircle(ox+20*S, oy+8*S,  9*S);
-      g.lineStyle(3, 0x222222);
-      g.strokeCircle(ox+20*S, oy+20*S, 14*S);
-      g.strokeCircle(ox+20*S, oy+8*S,  9*S);
-    }, new Phaser.Geom.Circle(ox+20*S, oy+16*S, 20*S), Phaser.Geom.Circle.Contains, 0x888888);
-
-    // Trunk
-    this._z((g, c) => {
-      g.fillStyle(c); g.fillRect(ox+12*S, oy+14*S, 5*S, 16*S);
-      g.lineStyle(3, 0x222222); g.strokeRect(ox+12*S, oy+14*S, 5*S, 16*S);
-    }, new Phaser.Geom.Rectangle(ox+12*S, oy+14*S, 5*S, 16*S), Phaser.Geom.Rectangle.Contains, 0x999999);
-
-    // Ear
-    this._z((g, c) => {
-      g.fillStyle(c); g.fillEllipse(ox+9*S, oy+6*S, 9*S, 12*S);
-      g.lineStyle(3, 0x222222); g.strokeEllipse(ox+9*S, oy+6*S, 9*S, 12*S);
-    }, new Phaser.Geom.Ellipse(ox+9*S, oy+6*S, 9*S, 12*S), Phaser.Geom.Ellipse.Contains, 0xf5a0a0);
-
-    // Legs
-    this._z((g, c) => {
-      g.fillStyle(c);
-      g.fillRect(ox+8*S, oy+31*S, 7*S, 11*S);
-      g.fillRect(ox+25*S, oy+31*S, 7*S, 11*S);
-      g.lineStyle(3, 0x222222);
-      g.strokeRect(ox+8*S, oy+31*S, 7*S, 11*S);
-      g.strokeRect(ox+25*S, oy+31*S, 7*S, 11*S);
-    }, new Phaser.Geom.Rectangle(ox+8*S, oy+31*S, 24*S, 11*S), Phaser.Geom.Rectangle.Contains, 0x888888);
-  }
-
-  // ── Lion ──────────────────────────────────────────────────────────────
-  _pageLion() {
-    const S = 5, cx = 195, cy = 310;
-    const ox = cx - 20*S, oy = cy - 22*S;
-
-    // Mane
-    this._z((g, c) => {
-      g.fillStyle(c); g.fillCircle(ox+20*S, oy+20*S, 18*S);
-      g.lineStyle(3, 0x222222); g.strokeCircle(ox+20*S, oy+20*S, 18*S);
-    }, new Phaser.Geom.Circle(ox+20*S, oy+20*S, 18*S), Phaser.Geom.Circle.Contains, 0xc8860a);
-
-    // Face
-    this._z((g, c) => {
-      g.fillStyle(c); g.fillCircle(ox+20*S, oy+20*S, 13*S);
-      g.lineStyle(3, 0x222222); g.strokeCircle(ox+20*S, oy+20*S, 13*S);
-    }, new Phaser.Geom.Circle(ox+20*S, oy+20*S, 13*S), Phaser.Geom.Circle.Contains, 0xd4a017);
-
-    // Nose
-    this._z((g, c) => {
-      g.fillStyle(c); g.fillCircle(ox+20*S, oy+23*S, 5*S);
-      g.lineStyle(3, 0x222222); g.strokeCircle(ox+20*S, oy+23*S, 5*S);
-    }, new Phaser.Geom.Circle(ox+20*S, oy+23*S, 5*S), Phaser.Geom.Circle.Contains, 0xff9999);
-  }
-
-  // ── Rabbit ────────────────────────────────────────────────────────────
-  _pageRabbit() {
-    const S = 5, cx = 195, oy = 178;
-    const ox = cx - 20*S;
-
-    // Outer ears
-    this._z((g, c) => {
-      g.fillStyle(c);
-      g.fillRect(ox+14*S, oy,     6*S, 14*S);
-      g.fillRect(ox+22*S, oy,     6*S, 14*S);
-      g.lineStyle(3, 0x222222);
-      g.strokeRect(ox+14*S, oy,   6*S, 14*S);
-      g.strokeRect(ox+22*S, oy,   6*S, 14*S);
-    }, new Phaser.Geom.Rectangle(ox+14*S, oy, 14*S, 14*S), Phaser.Geom.Rectangle.Contains, 0xffffff);
-
-    // Inner ears
-    this._z((g, c) => {
-      g.fillStyle(c);
-      g.fillRect(ox+15*S, oy+1*S, 4*S, 11*S);
-      g.fillRect(ox+23*S, oy+1*S, 4*S, 11*S);
-      g.lineStyle(3, 0x222222);
-      g.strokeRect(ox+15*S, oy+1*S, 4*S, 11*S);
-      g.strokeRect(ox+23*S, oy+1*S, 4*S, 11*S);
-    }, new Phaser.Geom.Rectangle(ox+15*S, oy+1*S, 12*S, 11*S), Phaser.Geom.Rectangle.Contains, 0xffaaaa);
+  // ── Elephant  (40×40, drawAnimal 'elephant') ──────────────────────────
+  _pageElephant(tx, ty, ts) {
+    // Body
+    this._z((g, c, a) => {
+      g.fillStyle(c, a); g.fillCircle(tx(20), ty(20), ts(14));
+    }, new Phaser.Geom.Circle(tx(20), ty(20), ts(14)), Phaser.Geom.Circle.Contains);
 
     // Head
-    this._z((g, c) => {
-      g.fillStyle(c); g.fillCircle(cx, oy+13*S, 9*S);
-      g.lineStyle(3, 0x222222); g.strokeCircle(cx, oy+13*S, 9*S);
-    }, new Phaser.Geom.Circle(cx, oy+13*S, 9*S), Phaser.Geom.Circle.Contains, 0xffffff);
+    this._z((g, c, a) => {
+      g.fillStyle(c, a); g.fillCircle(tx(20), ty(8), ts(9));
+    }, new Phaser.Geom.Circle(tx(20), ty(8), ts(9)), Phaser.Geom.Circle.Contains);
 
-    // Body
-    this._z((g, c) => {
-      g.fillStyle(c); g.fillCircle(cx, oy+25*S, 13*S);
-      g.lineStyle(3, 0x222222); g.strokeCircle(cx, oy+25*S, 13*S);
-    }, new Phaser.Geom.Circle(cx, oy+25*S, 13*S), Phaser.Geom.Circle.Contains, 0xffffff);
+    // Trunk
+    this._z((g, c, a) => {
+      g.fillStyle(c, a); g.fillRect(tx(12), ty(14), ts(4), ts(14));
+    }, new Phaser.Geom.Rectangle(tx(12), ty(14), ts(4), ts(14)), Phaser.Geom.Rectangle.Contains);
 
-    // Nose
-    this._z((g, c) => {
-      g.fillStyle(c); g.fillCircle(cx, oy+18*S, 3*S);
-      g.lineStyle(3, 0x222222); g.strokeCircle(cx, oy+18*S, 3*S);
-    }, new Phaser.Geom.Circle(cx, oy+18*S, 3*S), Phaser.Geom.Circle.Contains, 0xff9999);
+    // Ear
+    this._z((g, c, a) => {
+      g.fillStyle(c, a); g.fillEllipse(tx(10), ty(6), ts(8), ts(10));
+    }, new Phaser.Geom.Ellipse(tx(10), ty(6), ts(8), ts(10)), Phaser.Geom.Ellipse.Contains);
+
+    // Legs
+    this._z((g, c, a) => {
+      g.fillStyle(c, a);
+      g.fillRect(tx(8),  ty(30), ts(6), ts(10));
+      g.fillRect(tx(26), ty(30), ts(6), ts(10));
+    }, new Phaser.Geom.Rectangle(tx(8), ty(30), ts(24), ts(10)), Phaser.Geom.Rectangle.Contains);
   }
 
-  // ── Ark ───────────────────────────────────────────────────────────────
-  _pageArk() {
-    const S = 2.6, cx = 195, cy = 300;
-    const ox = cx - 60*S, oy = cy - 50*S;
+  // ── Lion  (40×40, drawAnimal 'lion') ──────────────────────────────────
+  _pageLion(tx, ty, ts) {
+    // Mane
+    this._z((g, c, a) => {
+      g.fillStyle(c, a); g.fillCircle(tx(20), ty(20), ts(18));
+    }, new Phaser.Geom.Circle(tx(20), ty(20), ts(18)), Phaser.Geom.Circle.Contains);
 
+    // Face
+    this._z((g, c, a) => {
+      g.fillStyle(c, a); g.fillCircle(tx(20), ty(20), ts(13));
+    }, new Phaser.Geom.Circle(tx(20), ty(20), ts(13)), Phaser.Geom.Circle.Contains);
+
+    // Nose
+    this._z((g, c, a) => {
+      g.fillStyle(c, a); g.fillCircle(tx(20), ty(22), ts(4));
+    }, new Phaser.Geom.Circle(tx(20), ty(22), ts(4)), Phaser.Geom.Circle.Contains);
+  }
+
+  // ── Rabbit  (40×40, drawAnimal 'rabbit') ──────────────────────────────
+  _pageRabbit(tx, ty, ts) {
+    // Outer ears
+    this._z((g, c, a) => {
+      g.fillStyle(c, a);
+      g.fillRect(tx(14), ty(0), ts(6), ts(14));
+      g.fillRect(tx(22), ty(0), ts(6), ts(14));
+    }, new Phaser.Geom.Rectangle(tx(14), ty(0), ts(14), ts(14)), Phaser.Geom.Rectangle.Contains);
+
+    // Inner ears
+    this._z((g, c, a) => {
+      g.fillStyle(c, a);
+      g.fillRect(tx(15), ty(1), ts(4), ts(11));
+      g.fillRect(tx(23), ty(1), ts(4), ts(11));
+    }, new Phaser.Geom.Rectangle(tx(15), ty(1), ts(12), ts(11)), Phaser.Geom.Rectangle.Contains);
+
+    // Head
+    this._z((g, c, a) => {
+      g.fillStyle(c, a); g.fillCircle(tx(20), ty(12), ts(9));
+    }, new Phaser.Geom.Circle(tx(20), ty(12), ts(9)), Phaser.Geom.Circle.Contains);
+
+    // Body
+    this._z((g, c, a) => {
+      g.fillStyle(c, a); g.fillCircle(tx(20), ty(24), ts(13));
+    }, new Phaser.Geom.Circle(tx(20), ty(24), ts(13)), Phaser.Geom.Circle.Contains);
+
+    // Nose
+    this._z((g, c, a) => {
+      g.fillStyle(c, a); g.fillCircle(tx(20), ty(17), ts(2));
+    }, new Phaser.Geom.Circle(tx(20), ty(17), ts(2)), Phaser.Geom.Circle.Contains);
+  }
+
+  // ── Ark  (120×100, drawArk geometry) ─────────────────────────────────
+  _pageArk(tx, ty, ts) {
     // Hull
-    this._z((g, c) => {
-      g.fillStyle(c); g.fillRect(ox, oy+50*S, 120*S, 50*S);
-      g.lineStyle(3, 0x222222); g.strokeRect(ox, oy+50*S, 120*S, 50*S);
-    }, new Phaser.Geom.Rectangle(ox, oy+50*S, 120*S, 50*S), Phaser.Geom.Rectangle.Contains, 0x8B4513);
+    this._z((g, c, a) => {
+      g.fillStyle(c, a); g.fillRect(tx(0), ty(50), ts(120), ts(50));
+    }, new Phaser.Geom.Rectangle(tx(0), ty(50), ts(120), ts(50)), Phaser.Geom.Rectangle.Contains);
 
     // Cabin
-    this._z((g, c) => {
-      g.fillStyle(c); g.fillRect(ox+20*S, oy+20*S, 80*S, 35*S);
-      g.lineStyle(3, 0x222222); g.strokeRect(ox+20*S, oy+20*S, 80*S, 35*S);
-    }, new Phaser.Geom.Rectangle(ox+20*S, oy+20*S, 80*S, 35*S), Phaser.Geom.Rectangle.Contains, 0xcd853f);
+    this._z((g, c, a) => {
+      g.fillStyle(c, a); g.fillRect(tx(20), ty(20), ts(80), ts(35));
+    }, new Phaser.Geom.Rectangle(tx(20), ty(20), ts(80), ts(35)), Phaser.Geom.Rectangle.Contains);
 
     // Roof
-    this._z((g, c) => {
-      g.fillStyle(c);
-      g.fillTriangle(ox+15*S, oy+20*S, ox+105*S, oy+20*S, ox+60*S, oy+2*S);
-      g.lineStyle(3, 0x222222);
-      g.strokePoints([{x:ox+15*S,y:oy+20*S},{x:ox+105*S,y:oy+20*S},{x:ox+60*S,y:oy+2*S}], true);
-    }, new Phaser.Geom.Triangle(ox+15*S, oy+20*S, ox+105*S, oy+20*S, ox+60*S, oy+2*S), Phaser.Geom.Triangle.Contains, 0x8B0000);
+    this._z((g, c, a) => {
+      g.fillStyle(c, a);
+      g.fillTriangle(tx(15), ty(20), tx(105), ty(20), tx(60), ty(2));
+    }, new Phaser.Geom.Triangle(tx(15), ty(20), tx(105), ty(20), tx(60), ty(2)), Phaser.Geom.Triangle.Contains);
 
     // Windows
-    this._z((g, c) => {
-      g.fillStyle(c);
-      [28, 53, 78].forEach(wx => g.fillRect(ox+wx*S, oy+28*S, 14*S, 12*S));
-      g.lineStyle(3, 0x222222);
-      [28, 53, 78].forEach(wx => g.strokeRect(ox+wx*S, oy+28*S, 14*S, 12*S));
-    }, new Phaser.Geom.Rectangle(ox+28*S, oy+28*S, 64*S, 12*S), Phaser.Geom.Rectangle.Contains, 0x87CEEB);
+    this._z((g, c, a) => {
+      g.fillStyle(c, a);
+      [28, 53, 78].forEach(wx => g.fillRect(tx(wx), ty(28), ts(14), ts(12)));
+    }, new Phaser.Geom.Rectangle(tx(28), ty(28), ts(64), ts(12)), Phaser.Geom.Rectangle.Contains);
   }
 }
