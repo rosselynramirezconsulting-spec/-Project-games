@@ -58,6 +58,25 @@ export default class ColorScene extends Phaser.Scene {
     this._loadPage();
   }
 
+  // Convert a loaded Phaser texture to grayscale; cache the result.
+  _gray(key) {
+    const gk = key + '-gray';
+    if (this.textures.exists(gk)) return gk;
+    const src = this.textures.get(key).getSourceImage();
+    const c = document.createElement('canvas');
+    c.width = src.width; c.height = src.height;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(src, 0, 0);
+    const id = ctx.getImageData(0, 0, c.width, c.height);
+    for (let i = 0; i < id.data.length; i += 4) {
+      const v = id.data[i] * 0.299 + id.data[i + 1] * 0.587 + id.data[i + 2] * 0.114;
+      id.data[i] = id.data[i + 1] = id.data[i + 2] = v;
+    }
+    ctx.putImageData(id, 0, 0);
+    this.textures.addCanvas(gk, c);
+    return gk;
+  }
+
   _drawBg(W, H) {
     this.add.rectangle(W / 2, H / 2, W, H, 0xd4f0ff);
     [[50, 130], [240, 110], [140, 175]].forEach(([x, y]) => {
@@ -119,25 +138,22 @@ export default class ColorScene extends Phaser.Scene {
     })[this._pages[this._page]]?.();
   }
 
-  // Makes a tappable zone. Starts white, fills with selected color on tap.
+  // Show grayscale sprite as the coloring template (depth 3)
+  _showSprite(key, cx, cy, S) {
+    const img = this.add.image(cx, cy, this._gray(key)).setScale(S).setDepth(3);
+    this._zones.push(img);
+  }
+
+  // Zone: invisible until tapped, then fills with selected color
   _z(drawFn, geom, geomContains) {
     const gfx = this.add.graphics().setDepth(4);
-    let color = 0xffffff;
-    const redraw = () => { gfx.clear(); drawFn(gfx, color); };
-    redraw();
+    let active = false, color = 0xffffff;
+    const redraw = () => { gfx.clear(); if (active) drawFn(gfx, color); };
     gfx.setInteractive(geom, geomContains);
-    gfx.on('pointerdown', () => { color = this._sel; redraw(); });
+    gfx.on('pointerdown', () => { active = true; color = this._sel; redraw(); });
     this._zones.push(gfx);
   }
 
-  // Static detail (non-colorable: eyes, patterns, etc.)
-  _detail(drawFn) {
-    const g = this.add.graphics().setDepth(6);
-    drawFn(g);
-    this._zones.push(g);
-  }
-
-  // Helper: transform from sprite local coords to screen coords
   _mkT(tw, th, cx, cy, S) {
     return {
       tx: lx => cx + (lx - tw / 2) * S,
@@ -146,211 +162,141 @@ export default class ColorScene extends Phaser.Scene {
     };
   }
 
-  // ── Noah  (drawNoah — 48×64 sprite geometry × 5.5) ───────────────────
+  // ── Noah  (48×64 PNG — exact game sprite shown in grayscale) ──────────
   _pageNoah() {
-    const { tx, ty, ts } = this._mkT(48, 64, 188, 300, 5.5);
+    const cx = 188, cy = 300, S = 5.5;
+    this._showSprite('noah', cx, cy, S);
+    const { tx, ty, ts } = this._mkT(48, 64, cx, cy, S);
 
-    // Robe body + skirt (same color region)
+    // Robe + skirt
     this._z((g, c) => {
-      g.fillStyle(c);
+      g.fillStyle(c, 0.82);
       g.fillRect(tx(10), ty(30), ts(28), ts(24));
       g.fillTriangle(tx(10), ty(54), tx(38), ty(54), tx(24), ty(64));
-      g.lineStyle(3, 0x111111);
-      g.strokeRect(tx(10), ty(30), ts(28), ts(24));
-      g.strokePoints([{x:tx(10),y:ty(54)},{x:tx(38),y:ty(54)},{x:tx(24),y:ty(64)}], true);
     }, new Phaser.Geom.Rectangle(tx(10), ty(30), ts(28), ts(34)), Phaser.Geom.Rectangle.Contains);
 
-    // Head / face
+    // Face / head
     this._z((g, c) => {
-      g.fillStyle(c); g.fillCircle(tx(24), ty(18), ts(14));
-      g.lineStyle(3, 0x111111); g.strokeCircle(tx(24), ty(18), ts(14));
+      g.fillStyle(c, 0.82); g.fillCircle(tx(24), ty(18), ts(14));
     }, new Phaser.Geom.Circle(tx(24), ty(18), ts(14)), Phaser.Geom.Circle.Contains);
 
     // Beard
     this._z((g, c) => {
-      g.fillStyle(c);
+      g.fillStyle(c, 0.82);
       g.fillTriangle(tx(16), ty(26), tx(32), ty(26), tx(24), ty(38));
-      g.lineStyle(3, 0x111111);
-      g.strokePoints([{x:tx(16),y:ty(26)},{x:tx(32),y:ty(26)},{x:tx(24),y:ty(38)}], true);
     }, new Phaser.Geom.Triangle(tx(16), ty(26), tx(32), ty(26), tx(24), ty(38)), Phaser.Geom.Triangle.Contains);
 
-    // Hat (both rect layers combined)
+    // Hat
     this._z((g, c) => {
-      g.fillStyle(c);
-      g.fillRect(tx(10), ty(4), ts(28), ts(14));
-      g.lineStyle(3, 0x111111);
-      g.strokeRect(tx(10), ty(4), ts(28), ts(14));
+      g.fillStyle(c, 0.82); g.fillRect(tx(10), ty(4), ts(28), ts(14));
     }, new Phaser.Geom.Rectangle(tx(10), ty(4), ts(28), ts(14)), Phaser.Geom.Rectangle.Contains);
 
     // Staff
     this._z((g, c) => {
-      g.fillStyle(c);
-      g.fillRect(tx(38), ty(20), ts(4), ts(44));
-      g.lineStyle(3, 0x111111);
-      g.strokeRect(tx(38), ty(20), ts(4), ts(44));
+      g.fillStyle(c, 0.82); g.fillRect(tx(38), ty(20), ts(4), ts(44));
     }, new Phaser.Geom.Rectangle(tx(38), ty(20), ts(4), ts(44)), Phaser.Geom.Rectangle.Contains);
-
-    // Static: eyes + smile (exact from drawNoah)
-    this._detail((g) => {
-      g.fillStyle(0x222222);
-      g.fillCircle(tx(20), ty(16), ts(2));
-      g.fillCircle(tx(28), ty(16), ts(2));
-      g.lineStyle(ts(0.5), 0x333333);
-      g.strokePoints([{x:tx(20),y:ty(22)},{x:tx(24),y:ty(25)},{x:tx(28),y:ty(22)}], false);
-    });
   }
 
-  // ── Elephant  (drawAnimal 'elephant' — 40×40 × 6.5) ──────────────────
+  // ── Elephant  (40×40 texture — exact game sprite in grayscale) ────────
   _pageElephant() {
-    const { tx, ty, ts } = this._mkT(40, 40, 190, 310, 6.5);
+    const cx = 190, cy = 310, S = 6.5;
+    this._showSprite('elephant', cx, cy, S);
+    const { tx, ty, ts } = this._mkT(40, 40, cx, cy, S);
 
-    // Main body (body circle + head circle + trunk + legs — same gray)
+    // Body + head + trunk + legs
     this._z((g, c) => {
-      g.fillStyle(c);
+      g.fillStyle(c, 0.82);
       g.fillCircle(tx(20), ty(20), ts(14));
       g.fillCircle(tx(20), ty(8),  ts(9));
       g.fillRect(tx(12), ty(14), ts(4), ts(14));
       g.fillRect(tx(8),  ty(30), ts(6), ts(10));
       g.fillRect(tx(26), ty(30), ts(6), ts(10));
-      g.lineStyle(3, 0x111111);
-      g.strokeCircle(tx(20), ty(20), ts(14));
-      g.strokeCircle(tx(20), ty(8),  ts(9));
-      g.strokeRect(tx(12), ty(14), ts(4), ts(14));
-      g.strokeRect(tx(8),  ty(30), ts(6), ts(10));
-      g.strokeRect(tx(26), ty(30), ts(6), ts(10));
     }, new Phaser.Geom.Circle(tx(20), ty(16), ts(18)), Phaser.Geom.Circle.Contains);
 
-    // Ear (pink in game)
+    // Ear (pink zone)
     this._z((g, c) => {
-      g.fillStyle(c); g.fillEllipse(tx(10), ty(6), ts(8), ts(10));
-      g.lineStyle(3, 0x111111); g.strokeEllipse(tx(10), ty(6), ts(8), ts(10));
+      g.fillStyle(c, 0.82); g.fillEllipse(tx(10), ty(6), ts(8), ts(10));
     }, new Phaser.Geom.Ellipse(tx(10), ty(6), ts(8), ts(10)), Phaser.Geom.Ellipse.Contains);
-
-    // Static: eye
-    this._detail((g) => {
-      g.fillStyle(0x111111); g.fillCircle(tx(17), ty(8), ts(2));
-    });
   }
 
-  // ── Lion  (drawAnimal 'lion' — 40×40 × 6.5) ──────────────────────────
+  // ── Lion  (40×40 texture — exact game sprite in grayscale) ────────────
   _pageLion() {
-    const { tx, ty, ts } = this._mkT(40, 40, 195, 295, 6.5);
+    const cx = 195, cy = 295, S = 6.5;
+    this._showSprite('lion', cx, cy, S);
+    const { tx, ty, ts } = this._mkT(40, 40, cx, cy, S);
 
-    // Mane (outer circle)
+    // Mane
     this._z((g, c) => {
-      g.fillStyle(c); g.fillCircle(tx(20), ty(20), ts(18));
-      g.lineStyle(3, 0x111111); g.strokeCircle(tx(20), ty(20), ts(18));
+      g.fillStyle(c, 0.82); g.fillCircle(tx(20), ty(20), ts(18));
     }, new Phaser.Geom.Circle(tx(20), ty(20), ts(18)), Phaser.Geom.Circle.Contains);
 
-    // Face (inner circle)
+    // Face
     this._z((g, c) => {
-      g.fillStyle(c); g.fillCircle(tx(20), ty(20), ts(13));
-      g.lineStyle(3, 0x111111); g.strokeCircle(tx(20), ty(20), ts(13));
+      g.fillStyle(c, 0.82); g.fillCircle(tx(20), ty(20), ts(13));
     }, new Phaser.Geom.Circle(tx(20), ty(20), ts(13)), Phaser.Geom.Circle.Contains);
 
-    // Nose (pink circle)
+    // Nose
     this._z((g, c) => {
-      g.fillStyle(c); g.fillCircle(tx(20), ty(22), ts(4));
-      g.lineStyle(3, 0x111111); g.strokeCircle(tx(20), ty(22), ts(4));
+      g.fillStyle(c, 0.82); g.fillCircle(tx(20), ty(22), ts(4));
     }, new Phaser.Geom.Circle(tx(20), ty(22), ts(4)), Phaser.Geom.Circle.Contains);
-
-    // Static: eyes
-    this._detail((g) => {
-      g.fillStyle(0x111111);
-      g.fillCircle(tx(16), ty(17), ts(2));
-      g.fillCircle(tx(24), ty(17), ts(2));
-    });
   }
 
-  // ── Rabbit  (drawAnimal 'rabbit' — 40×40 × 6.5) ──────────────────────
+  // ── Rabbit  (40×40 texture — exact game sprite in grayscale) ──────────
   _pageRabbit() {
-    const { tx, ty, ts } = this._mkT(40, 40, 195, 295, 6.5);
+    const cx = 195, cy = 295, S = 6.5;
+    this._showSprite('rabbit', cx, cy, S);
+    const { tx, ty, ts } = this._mkT(40, 40, cx, cy, S);
 
-    // Outer ears + body + head (white in game)
+    // Body + head + outer ears
     this._z((g, c) => {
-      g.fillStyle(c);
-      g.fillCircle(tx(20), ty(24), ts(13)); // body
-      g.fillCircle(tx(20), ty(12), ts(9));  // head
-      g.fillRect(tx(14), ty(0), ts(6), ts(14)); // ear L
-      g.fillRect(tx(22), ty(0), ts(6), ts(14)); // ear R
-      g.lineStyle(3, 0x111111);
-      g.strokeCircle(tx(20), ty(24), ts(13));
-      g.strokeCircle(tx(20), ty(12), ts(9));
-      g.strokeRect(tx(14), ty(0), ts(6), ts(14));
-      g.strokeRect(tx(22), ty(0), ts(6), ts(14));
+      g.fillStyle(c, 0.82);
+      g.fillCircle(tx(20), ty(24), ts(13));
+      g.fillCircle(tx(20), ty(12), ts(9));
+      g.fillRect(tx(14), ty(0), ts(6), ts(14));
+      g.fillRect(tx(22), ty(0), ts(6), ts(14));
     }, new Phaser.Geom.Circle(tx(20), ty(16), ts(22)), Phaser.Geom.Circle.Contains);
 
-    // Inner ears (pink in game)
+    // Inner ears
     this._z((g, c) => {
-      g.fillStyle(c);
+      g.fillStyle(c, 0.82);
       g.fillRect(tx(15), ty(1), ts(4), ts(11));
       g.fillRect(tx(23), ty(1), ts(4), ts(11));
-      g.lineStyle(3, 0x111111);
-      g.strokeRect(tx(15), ty(1), ts(4), ts(11));
-      g.strokeRect(tx(23), ty(1), ts(4), ts(11));
     }, new Phaser.Geom.Rectangle(tx(15), ty(1), ts(12), ts(11)), Phaser.Geom.Rectangle.Contains);
 
-    // Nose (pink circle)
+    // Nose
     this._z((g, c) => {
-      g.fillStyle(c); g.fillCircle(tx(20), ty(17), ts(2));
-      g.lineStyle(3, 0x111111); g.strokeCircle(tx(20), ty(17), ts(2));
+      g.fillStyle(c, 0.82); g.fillCircle(tx(20), ty(17), ts(2));
     }, new Phaser.Geom.Circle(tx(20), ty(17), ts(2)), Phaser.Geom.Circle.Contains);
-
-    // Static: eyes
-    this._detail((g) => {
-      g.fillStyle(0x111111);
-      g.fillCircle(tx(17), ty(12), ts(2));
-      g.fillCircle(tx(23), ty(12), ts(2));
-    });
   }
 
-  // ── Ark  (drawArk — 120×100 × 2.8) ───────────────────────────────────
+  // ── Ark  (120×100 texture — exact game sprite in grayscale) ───────────
   _pageArk() {
-    const { tx, ty, ts } = this._mkT(120, 100, 195, 305, 2.8);
+    const cx = 195, cy = 305, S = 2.8;
+    this._showSprite('ark', cx, cy, S);
+    const { tx, ty, ts } = this._mkT(120, 100, cx, cy, S);
 
     // Hull
     this._z((g, c) => {
-      g.fillStyle(c);
-      g.fillRect(tx(0), ty(50), ts(120), ts(50));
-      g.fillTriangle(tx(0), ty(50), tx(0), ty(100), tx(20), ty(100));
-      g.fillTriangle(tx(120), ty(50), tx(120), ty(100), tx(100), ty(100));
-      g.lineStyle(3, 0x111111);
-      g.strokeRect(tx(0), ty(50), ts(120), ts(50));
+      g.fillStyle(c, 0.82); g.fillRect(tx(0), ty(50), ts(120), ts(50));
     }, new Phaser.Geom.Rectangle(tx(0), ty(50), ts(120), ts(50)), Phaser.Geom.Rectangle.Contains);
 
     // Cabin
     this._z((g, c) => {
-      g.fillStyle(c);
+      g.fillStyle(c, 0.82);
       g.fillRect(tx(20), ty(20), ts(80), ts(35));
       g.fillRect(tx(35), ty(5),  ts(50), ts(20));
-      g.lineStyle(3, 0x111111);
-      g.strokeRect(tx(20), ty(20), ts(80), ts(35));
-      g.strokeRect(tx(35), ty(5),  ts(50), ts(20));
     }, new Phaser.Geom.Rectangle(tx(20), ty(5), ts(80), ts(50)), Phaser.Geom.Rectangle.Contains);
 
     // Roof
     this._z((g, c) => {
-      g.fillStyle(c);
+      g.fillStyle(c, 0.82);
       g.fillTriangle(tx(15), ty(20), tx(105), ty(20), tx(60), ty(2));
-      g.lineStyle(3, 0x111111);
-      g.strokePoints([{x:tx(15),y:ty(20)},{x:tx(105),y:ty(20)},{x:tx(60),y:ty(2)}], true);
     }, new Phaser.Geom.Triangle(tx(15), ty(20), tx(105), ty(20), tx(60), ty(2)), Phaser.Geom.Triangle.Contains);
 
     // Windows
     this._z((g, c) => {
-      g.fillStyle(c);
+      g.fillStyle(c, 0.82);
       [28, 53, 78].forEach(wx => g.fillRect(tx(wx), ty(28), ts(14), ts(12)));
-      g.lineStyle(3, 0x111111);
-      [28, 53, 78].forEach(wx => g.strokeRect(tx(wx), ty(28), ts(14), ts(12)));
     }, new Phaser.Geom.Rectangle(tx(28), ty(28), ts(64), ts(12)), Phaser.Geom.Rectangle.Contains);
-
-    // Static: wood plank lines (from drawArk)
-    this._detail((g) => {
-      g.lineStyle(2, 0x888888, 0.6);
-      for (let x = tx(15); x < tx(120); x += ts(15)) {
-        g.lineBetween(x, ty(50), x, ty(100));
-      }
-      g.lineBetween(tx(0), ty(55), tx(120), ty(55)); // waterline stripe
-    });
   }
 }
