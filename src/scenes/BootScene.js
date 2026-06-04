@@ -1,4 +1,4 @@
-import { drawArk, drawArkOpen, drawAnimal, drawBackground, drawWater, drawRainDrop, drawCoin, drawIcePlatform, drawHeart } from '../utils/Graphics.js';
+import { drawArk, drawArkOpen, drawAnimal, drawBackground, drawWater, drawRainDrop, drawCoin, drawHeart } from '../utils/Graphics.js';
 
 export default class BootScene extends Phaser.Scene {
   constructor() {
@@ -8,6 +8,7 @@ export default class BootScene extends Phaser.Scene {
   preload() {
     this.load.image('noah', 'assets/noah.png');
     this.load.image('platform', 'assets/platform.png');
+    this.load.image('iceplatform', 'assets/iceplatform.png');
   }
 
   create() {
@@ -48,11 +49,7 @@ export default class BootScene extends Phaser.Scene {
     drawCoin(g);
     g.generateTexture('star', 28, 28);
 
-    // 'platform' texture loaded from assets/platform.png in preload()
-
-    g.clear();
-    drawIcePlatform(g);
-    g.generateTexture('iceplatform', 96, 18);
+    // 'platform' and 'iceplatform' loaded from assets/ in preload()
 
     g.clear();
     drawArkOpen(g);
