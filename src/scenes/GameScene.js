@@ -11,14 +11,14 @@ const ARK_Y      = 100;
 const MAX_HORIZ = 100;
 
 const LEVELS = [
-  { platCount: 20, minW: 88, maxW: 110, movingCount: 0,  crumbleCount: 0, bounceCount: 0, gapMin: 100, gapMax: 130 },
-  { platCount: 18, minW: 74, maxW: 100, movingCount: 4,  crumbleCount: 0, bounceCount: 2, gapMin: 110, gapMax: 145 },
-  { platCount: 16, minW: 62, maxW: 90,  movingCount: 6,  crumbleCount: 3, bounceCount: 3, gapMin: 120, gapMax: 158 },
-  { platCount: 14, minW: 54, maxW: 80,  movingCount: 8,  crumbleCount: 5, bounceCount: 4, gapMin: 132, gapMax: 170 },
-  { platCount: 12, minW: 48, maxW: 68,  movingCount: 10, crumbleCount: 7, bounceCount: 5, gapMin: 144, gapMax: 182 },
-  { platCount: 11, minW: 44, maxW: 62,  movingCount: 12, crumbleCount: 8, bounceCount: 5, gapMin: 150, gapMax: 190 },
-  { platCount: 10, minW: 40, maxW: 56,  movingCount: 14, crumbleCount: 9, bounceCount: 6, gapMin: 156, gapMax: 196 },
-  { platCount: 9,  minW: 38, maxW: 52,  movingCount: 16, crumbleCount:10, bounceCount: 7, gapMin: 162, gapMax: 202 },
+  { platCount: 20, minW: 88, maxW: 110, movingCount: 0,  crumbleCount: 0, bounceCount: 0, fallingCount: 0, gapMin: 100, gapMax: 130 },
+  { platCount: 18, minW: 74, maxW: 100, movingCount: 4,  crumbleCount: 0, bounceCount: 2, fallingCount: 3, gapMin: 110, gapMax: 145 },
+  { platCount: 16, minW: 62, maxW: 90,  movingCount: 6,  crumbleCount: 3, bounceCount: 3, fallingCount: 4, gapMin: 120, gapMax: 158 },
+  { platCount: 14, minW: 54, maxW: 80,  movingCount: 8,  crumbleCount: 5, bounceCount: 4, fallingCount: 5, gapMin: 132, gapMax: 170 },
+  { platCount: 12, minW: 48, maxW: 68,  movingCount: 10, crumbleCount: 7, bounceCount: 5, fallingCount: 6, gapMin: 144, gapMax: 182 },
+  { platCount: 11, minW: 44, maxW: 62,  movingCount: 12, crumbleCount: 8, bounceCount: 5, fallingCount: 7, gapMin: 150, gapMax: 190 },
+  { platCount: 10, minW: 40, maxW: 56,  movingCount: 14, crumbleCount: 9, bounceCount: 6, fallingCount: 7, gapMin: 156, gapMax: 196 },
+  { platCount: 9,  minW: 38, maxW: 52,  movingCount: 16, crumbleCount:10, bounceCount: 7, fallingCount: 8, gapMin: 162, gapMax: 202 },
 ];
 
 const ANIMALS = ['elephant', 'giraffe', 'lion', 'zebra', 'monkey', 'rabbit', 'penguin', 'bear'];
@@ -30,6 +30,7 @@ function getLevelData(level) {
   base.movingCount  = LEVELS[7].movingCount  + extra * 2;
   base.crumbleCount = LEVELS[7].crumbleCount + extra;
   base.bounceCount  = LEVELS[7].bounceCount  + extra;
+  base.fallingCount = LEVELS[7].fallingCount + extra;
   base.gapMin = LEVELS[7].gapMin + extra * 6;
   base.gapMax = LEVELS[7].gapMax + extra * 6;
   return base;
@@ -86,6 +87,8 @@ export default class GameScene extends Phaser.Scene {
     this.movingPlatGroup  = this.physics.add.group();
     this.crumblePlatGroup = this.physics.add.staticGroup();
     this.bouncePlatGroup  = this.physics.add.staticGroup();
+    this.fallingPlatGroup = this.physics.add.staticGroup();
+    this._fallingActive   = []; // platforms currently animating downward
 
     this._generatePlatforms();
     this._spawnAnimals();
@@ -112,6 +115,7 @@ export default class GameScene extends Phaser.Scene {
     this.physics.add.collider(this.noah, this.movingPlatGroup,  null,                      _fromAbove, this);
     this.physics.add.collider(this.noah, this.crumblePlatGroup, this._onCrumbleCollide,    _fromAbove, this);
     this.physics.add.collider(this.noah, this.bouncePlatGroup,  this._onBounceCollide,     _fromAbove, this);
+    this.physics.add.collider(this.noah, this.fallingPlatGroup, this._onFallingCollide,    _fromAbove, this);
 
     // Animal collection
     this.physics.add.overlap(this.noah, this.animalGroup, this._onCollectAnimal, null, this);
@@ -202,16 +206,19 @@ export default class GameScene extends Phaser.Scene {
     const shuffled     = [...eligible].sort(() => Math.random() - 0.5);
     const movingCount  = Math.max(ld.movingCount, 5);
     const crumbleCount = ld.crumbleCount;
-    const bounceCount  = ld.bounceCount || 0;
+    const bounceCount  = ld.bounceCount  || 0;
+    const fallingCount = ld.fallingCount || 0;
     let   offset       = 0;
     const movingSet  = new Set(shuffled.slice(offset, offset += movingCount));
     const crumbleSet = new Set(shuffled.slice(offset, offset += crumbleCount));
     const bounceSet  = new Set(shuffled.slice(offset, offset += bounceCount));
+    const fallingSet = new Set(shuffled.slice(offset, offset += fallingCount));
 
     platData.forEach((p, idx) => {
-      if (movingSet.has(idx))       p.type = 'moving';
-      else if (crumbleSet.has(idx)) p.type = 'crumble';
-      else if (bounceSet.has(idx))  p.type = 'bounce';
+      if (movingSet.has(idx))        p.type = 'moving';
+      else if (crumbleSet.has(idx))  p.type = 'crumble';
+      else if (bounceSet.has(idx))   p.type = 'bounce';
+      else if (fallingSet.has(idx))  p.type = 'falling';
     });
 
     this._movingPlats = [];
@@ -231,6 +238,12 @@ export default class GameScene extends Phaser.Scene {
         this.bouncePlatGroup.create(p.x, p.y, texKey)
           .setDisplaySize(p.w, 18).refreshBody()
           .setTint(0x44ff88); // green = bouncy
+
+      } else if (p.type === 'falling') {
+        const img = this.fallingPlatGroup.create(p.x, p.y, texKey);
+        img.setDisplaySize(p.w, 18).refreshBody();
+        img.setTint(0xdd88ff); // purple = falls when stepped on
+        img.triggered = false;
 
       } else if (p.type === 'moving') {
         const img = this.physics.add.image(p.x, p.y, texKey)
@@ -334,6 +347,29 @@ export default class GameScene extends Phaser.Scene {
       onComplete: () => {
         plat.setVisible(false);
         plat.body.enable = false;
+      },
+    });
+  }
+
+  // ── Falling platform logic ───────────────────────────────────────────
+  _onFallingCollide(noah, plat) {
+    if (!noah.body.blocked.down) return;
+    if (plat.triggered) return;
+    plat.triggered = true;
+
+    // Shake sideways for ~450ms, then drop
+    this.tweens.add({
+      targets: plat,
+      x: plat.x + 5,
+      duration: 75,
+      yoyo: true,
+      repeat: 5,
+      ease: 'Linear',
+      onComplete: () => {
+        if (!plat.active) return;
+        plat.body.enable = false; // stop collision
+        plat._fallSpeed  = 70;
+        this._fallingActive.push(plat);
       },
     });
   }
@@ -538,7 +574,7 @@ export default class GameScene extends Phaser.Scene {
 
   // ── Main loop ─────────────────────────────────────────────────────────
   update(time, delta) {
-    if (!this.noah || !this._movingPlats) return; // guard: _createGame() failed
+    if (!this.noah || !this._movingPlats || !this._fallingActive) return; // guard: _createGame() failed
     const noah = this.noah;
     const dt   = delta / 1000;
 
@@ -577,6 +613,18 @@ export default class GameScene extends Phaser.Scene {
           noah.x += plat.body.velocity.x * dt;
         }
       });
+    }
+
+    // Animate falling platforms (visual only — collision already disabled)
+    for (let i = this._fallingActive.length - 1; i >= 0; i--) {
+      const plat = this._fallingActive[i];
+      if (!plat.active) { this._fallingActive.splice(i, 1); continue; }
+      plat._fallSpeed = Math.min(plat._fallSpeed + 300 * dt, 500);
+      plat.y += plat._fallSpeed * dt;
+      if (plat.y > this._waterLevel + 300) {
+        this._fallingActive.splice(i, 1);
+        plat.destroy();
+      }
     }
 
     // Move and reverse moving platforms
