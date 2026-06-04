@@ -87,8 +87,9 @@ export default class GameScene extends Phaser.Scene {
     this.movingPlatGroup  = this.physics.add.group();
     this.crumblePlatGroup = this.physics.add.staticGroup();
     this.bouncePlatGroup  = this.physics.add.staticGroup();
-    this.fallingPlatGroup = this.physics.add.staticGroup();
-    this._fallingActive   = []; // platforms currently animating downward
+    this.fallingPlatGroup = this.physics.add.group();
+    this._fallingActive   = []; // platforms currently falling
+    this._ridingFalling   = false;
 
     this._generatePlatforms();
     this._spawnAnimals();
@@ -240,10 +241,14 @@ export default class GameScene extends Phaser.Scene {
           .setTint(0x44ff88); // green = bouncy
 
       } else if (p.type === 'falling') {
-        const img = this.fallingPlatGroup.create(p.x, p.y, texKey);
-        img.setDisplaySize(p.w, 18).refreshBody();
+        const img = this.physics.add.image(p.x, p.y, texKey)
+          .setDisplaySize(p.w, 18);
+        img.setImmovable(true);
+        img.body.allowGravity = false;
         img.setTint(0xdd88ff); // purple = falls when stepped on
         img.triggered = false;
+        img._fallSpeed = 0;
+        this.fallingPlatGroup.add(img);
 
       } else if (p.type === 'moving') {
         const img = this.physics.add.image(p.x, p.y, texKey)
@@ -367,8 +372,8 @@ export default class GameScene extends Phaser.Scene {
       ease: 'Linear',
       onComplete: () => {
         if (!plat.active) return;
-        plat.body.enable = false; // stop collision
-        plat._fallSpeed  = 70;
+        // Keep body enabled — Noah can still land/jump while platform falls
+        plat._fallSpeed = 70;
         this._fallingActive.push(plat);
       },
     });
@@ -591,11 +596,48 @@ export default class GameScene extends Phaser.Scene {
     if (this.cursors.left.isDown  || this.leftHeld)  { noah.setVelocityX(-NOAH_SPEED); noah.setFlipX(true);  }
     else if (this.cursors.right.isDown || this.rightHeld) { noah.setVelocityX(NOAH_SPEED); noah.setFlipX(false); }
 
+    // Falling platform carry — must run before jump check
+    // Restore gravity each frame; override below if riding a falling platform
+    noah.body.gravity.y = 680;
+    this._ridingFalling = false;
+    for (let i = this._fallingActive.length - 1; i >= 0; i--) {
+      const fp = this._fallingActive[i];
+      if (!fp.active) { this._fallingActive.splice(i, 1); continue; }
+
+      // Accelerate the fall
+      fp._fallSpeed = Math.min(fp._fallSpeed + 280 * dt, 480);
+      fp.body.velocity.y = fp._fallSpeed;
+
+      // Check if Noah is riding this platform (body-coordinate proximity)
+      const noahBott = noah.body.y + noah.body.height;
+      const platTop  = fp.body.y;
+      const platLeft = fp.body.x;
+      const platRight = fp.body.x + fp.body.width;
+      const noahCX   = noah.body.x + noah.body.width / 2;
+      if (
+        Math.abs(noahBott - platTop) < 14 &&
+        noahCX >= platLeft - 6 && noahCX <= platRight + 6 &&
+        noah.body.velocity.y >= 0
+      ) {
+        this._ridingFalling = true;
+        // Match Noah's velocity + a tiny extra so physics detects contact
+        noah.body.velocity.y = fp._fallSpeed + 4;
+        noah.body.gravity.y  = 0; // suppress extra gravity while riding
+      }
+
+      if (fp.y > this._waterLevel + 300) {
+        this._fallingActive.splice(i, 1);
+        fp.destroy();
+      }
+    }
+
     // Jump — held finger auto-jumps on landing; quick tap gives 300 ms buffer
     const jumpReady = this.cursors.up.isDown || jTouched || (time - this._jumpLastPressed < 1500);
-    if (jumpReady && noah.body.blocked.down) {
+    if (jumpReady && (noah.body.blocked.down || this._ridingFalling)) {
       noah.setVelocityY(JUMP_FORCE);
+      noah.body.gravity.y = 680; // restore gravity immediately on jump
       this._jumpLastPressed = -1000; // consumed
+      this._ridingFalling = false;
       this.sound.collect();
     }
 
@@ -613,18 +655,6 @@ export default class GameScene extends Phaser.Scene {
           noah.x += plat.body.velocity.x * dt;
         }
       });
-    }
-
-    // Animate falling platforms (visual only — collision already disabled)
-    for (let i = this._fallingActive.length - 1; i >= 0; i--) {
-      const plat = this._fallingActive[i];
-      if (!plat.active) { this._fallingActive.splice(i, 1); continue; }
-      plat._fallSpeed = Math.min(plat._fallSpeed + 300 * dt, 500);
-      plat.y += plat._fallSpeed * dt;
-      if (plat.y > this._waterLevel + 300) {
-        this._fallingActive.splice(i, 1);
-        plat.destroy();
-      }
     }
 
     // Move and reverse moving platforms
