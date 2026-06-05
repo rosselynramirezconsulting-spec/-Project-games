@@ -5,7 +5,7 @@ export default class ColorScene extends Phaser.Scene {
     const W = 390, H = 844;
     this._sel   = 0xff3333;
     this._page  = 0;
-    this._pages = ['noah', 'elephant', 'lion', 'rabbit', 'ark'];
+    this._pages = ['noah', 'elephant', 'giraffe', 'lion', 'zebra', 'monkey', 'rabbit', 'penguin', 'bear', 'ark'];
     this._zones = [];
     this._olGfx = null;
 
@@ -107,7 +107,7 @@ export default class ColorScene extends Phaser.Scene {
     this._zones.forEach(z => z.destroy());
     this._zones = [];
     if (this._olGfx) { this._olGfx.destroy(); this._olGfx = null; }
-    const LABELS = ['Noah', 'Elephant', 'Lion', 'Rabbit', 'The Ark'];
+    const LABELS = ['Noah', 'Elephant', 'Giraffe', 'Lion', 'Zebra', 'Monkey', 'Rabbit', 'Penguin', 'Bear', 'The Ark'];
     this._subTitle.setText(`${LABELS[this._page]}   (${this._page + 1} / ${this._pages.length})`);
     const p = this._pages[this._page];
     this[`_zones_${p}`]();
@@ -512,6 +512,113 @@ export default class ColorScene extends Phaser.Scene {
     [211, 223, 235, 247].forEach(px => g.lineBetween(px, 502, px, 516));
   }
 
+  // ─── GIRAFFE ────────────────────────────────────────────────────────────────
+  _zones_giraffe() {
+    const cx = 195;
+    this._z(g => {
+      g.fillRect(108,476,30,49); g.fillRect(150,476,30,49);
+      g.fillRect(230,476,30,49); g.fillRect(272,476,30,49);
+    }, new Phaser.Geom.Rectangle(108,476,194,49), Phaser.Geom.Rectangle.Contains);
+    this._z(g => g.fillEllipse(cx,428,185,112),
+      new Phaser.Geom.Ellipse(cx,428,185,112), Phaser.Geom.Ellipse.Contains);
+    this._z(g => g.fillRect(173,162,44,248),
+      new Phaser.Geom.Rectangle(173,162,44,248), Phaser.Geom.Rectangle.Contains);
+    this._z(g => {
+      g.fillCircle(cx,120,42);
+      g.fillEllipse(157,106,22,34); g.fillEllipse(233,106,22,34);
+    }, new Phaser.Geom.Circle(cx,120,62), Phaser.Geom.Circle.Contains);
+  }
+
+  _draw_giraffe(g) {
+    const cx = 195, ls = 3.5;
+    g.lineStyle(ls, 0x000000, 1);
+    [[108],[150],[230],[272]].forEach(([lx]) => g.strokeRect(lx,476,30,49));
+    g.lineStyle(2,0x000000,0.5);
+    [[108],[150],[230],[272]].forEach(([lx]) => g.lineBetween(lx+4,516,lx+26,516));
+    g.lineStyle(ls,0x000000,1);
+    g.strokeEllipse(cx,428,185,112);
+    g.lineStyle(3,0x000000,1);
+    g.strokePoints([{x:284,y:388},{x:298,y:408},{x:284,y:428},{x:296,y:446}],false);
+    g.lineStyle(2.5,0x000000,0.65);
+    [[cx-20,398],[cx+44,408],[cx-50,426],[cx+20,440],[cx-8,456]].forEach(([sx,sy])=>g.strokeEllipse(sx,sy,30,22));
+    g.lineStyle(ls,0x000000,1);
+    g.lineBetween(173,162,173,420); g.lineBetween(217,162,217,420);
+    g.lineStyle(2.5,0x000000,0.65);
+    [[cx-10,225],[cx+10,258],[cx-8,292],[cx+6,326]].forEach(([sx,sy])=>g.strokeEllipse(sx,sy,28,20));
+    g.lineStyle(ls,0x000000,1);
+    g.strokeCircle(cx,120,42);
+    g.strokeEllipse(157,106,22,34); g.strokeEllipse(233,106,22,34);
+    g.lineStyle(2,0x000000,0.5);
+    g.strokeEllipse(157,106,12,20); g.strokeEllipse(233,106,12,20);
+    g.fillStyle(0x000000,1);
+    g.fillCircle(cx-16,113,6); g.fillCircle(cx+16,113,6);
+    g.fillStyle(0xffffff,1);
+    g.fillCircle(cx-14,111,2.5); g.fillCircle(cx+14,111,2.5);
+    g.fillStyle(0x000000,0.55);
+    g.fillEllipse(cx-8,136,9,6); g.fillEllipse(cx+8,136,9,6);
+    // Mane dots down neck centre
+    g.fillStyle(0x000000,0.45);
+    for (let my=162; my<415; my+=18) g.fillRect(cx-2,my,4,10);
+  }
+
+  // ─── ZEBRA ──────────────────────────────────────────────────────────────────
+  _zones_zebra() {
+    const cx = 195;
+    this._z(g => {
+      g.fillRect(112,456,32,69); g.fillRect(154,456,32,69);
+      g.fillRect(224,456,32,69); g.fillRect(266,456,32,69);
+    }, new Phaser.Geom.Rectangle(112,456,186,69), Phaser.Geom.Rectangle.Contains);
+    this._z(g => g.fillEllipse(cx,388,186,136),
+      new Phaser.Geom.Ellipse(cx,388,186,136), Phaser.Geom.Ellipse.Contains);
+    this._z(g => {
+      g.fillCircle(cx,216,58);
+      g.fillEllipse(cx-40,172,20,38); g.fillEllipse(cx+40,172,20,38);
+    }, new Phaser.Geom.Circle(cx,216,74), Phaser.Geom.Circle.Contains);
+  }
+
+  _draw_zebra(g) {
+    const cx = 195, ls = 3.5;
+    g.lineStyle(ls,0x000000,1);
+    [[112],[154],[224],[266]].forEach(([lx]) => g.strokeRect(lx,456,32,69));
+    g.fillStyle(0x000000,0.9);
+    [[112],[154],[224],[266]].forEach(([lx]) => {
+      g.fillRect(lx,468,32,9); g.fillRect(lx,486,32,9); g.fillRect(lx,504,32,9);
+    });
+    g.lineStyle(ls,0x000000,1);
+    g.strokeEllipse(cx,388,186,136);
+    g.fillStyle(0x000000,0.88);
+    [[cx-84,338,22,100],[cx-58,324,20,100],[cx-30,320,18,32],[cx-30,378,18,46],
+     [cx+2,320,18,32],[cx+2,380,18,46],[cx+34,326,20,98],[cx+62,338,22,96]
+    ].forEach(([sx,sy,sw,sh]) => g.fillRect(sx,sy,sw,sh));
+    g.lineStyle(ls,0x000000,1);
+    g.strokeEllipse(cx,388,186,136);
+    g.lineStyle(3,0x000000,1);
+    g.strokePoints([{x:283,y:340},{x:296,y:360},{x:282,y:383}],false);
+    g.lineStyle(ls,0x000000,1);
+    g.strokeCircle(cx,216,58);
+    g.strokeEllipse(cx-40,172,20,38); g.strokeEllipse(cx+40,172,20,38);
+    g.lineStyle(2,0x000000,0.5);
+    g.strokeEllipse(cx-40,172,10,22); g.strokeEllipse(cx+40,172,10,22);
+    g.fillStyle(0x000000,0.88);
+    [[cx-48,193,14,46],[cx-28,183,14,52],[cx-8,181,14,52],
+     [cx+12,183,14,52],[cx+32,193,14,46]].forEach(([sx,sy,sw,sh]) => g.fillRect(sx,sy,sw,sh));
+    g.lineStyle(ls,0x000000,1);
+    g.strokeCircle(cx,216,58);
+    g.fillStyle(0x000000,1);
+    g.fillCircle(cx-22,208,7); g.fillCircle(cx+22,208,7);
+    g.fillStyle(0xffffff,1);
+    g.fillCircle(cx-20,206,3); g.fillCircle(cx+20,206,3);
+    g.fillStyle(0x000000,1);
+    g.fillEllipse(cx-8,246,11,8); g.fillEllipse(cx+8,246,11,8);
+    g.lineStyle(2.5,0x000000,1);
+    g.strokePoints([{x:cx-10,y:253},{x:cx,y:260},{x:cx+10,y:253}],false);
+    // Zigzag mane
+    g.lineStyle(3,0x000000,0.8);
+    const mane=[];
+    for (let mi=0;mi<=9;mi++) mane.push({x:cx+(mi%2===0?-9:9),y:158+mi*16});
+    g.strokePoints(mane,false);
+  }
+
   // ─── ARK ───────────────────────────────────────────────────────────────────
   _zones_ark() {
     const cx = 195;
@@ -539,6 +646,138 @@ export default class ColorScene extends Phaser.Scene {
     // Water
     this._z(g => g.fillRect(20, 498, 350, 36),
       new Phaser.Geom.Rectangle(20, 498, 350, 36), Phaser.Geom.Rectangle.Contains);
+  }
+
+  // ─── MONKEY ─────────────────────────────────────────────────────────────────
+  _zones_monkey() {
+    const cx = 195;
+    this._z(g => { g.fillEllipse(112,356,58,108); g.fillEllipse(278,356,58,108); },
+      new Phaser.Geom.Rectangle(83,302,224,108), Phaser.Geom.Rectangle.Contains);
+    this._z(g => g.fillEllipse(cx,406,172,152),
+      new Phaser.Geom.Ellipse(cx,406,172,152), Phaser.Geom.Ellipse.Contains);
+    this._z(g => g.fillCircle(cx,236,62),
+      new Phaser.Geom.Circle(cx,236,62), Phaser.Geom.Circle.Contains);
+    this._z(g => { g.fillCircle(cx-72,239,28); g.fillCircle(cx+72,239,28); },
+      new Phaser.Geom.Rectangle(cx-100,211,200,56), Phaser.Geom.Rectangle.Contains);
+    this._z(g => g.fillEllipse(cx,261,80,66),
+      new Phaser.Geom.Ellipse(cx,261,80,66), Phaser.Geom.Ellipse.Contains);
+  }
+
+  _draw_monkey(g) {
+    const cx = 195, ls = 3.5;
+    g.lineStyle(ls,0x000000,1);
+    g.strokeEllipse(112,356,58,108); g.strokeEllipse(278,356,58,108);
+    g.fillStyle(0xffffff,1);
+    g.fillCircle(112,410,18); g.fillCircle(278,410,18);
+    g.lineStyle(ls,0x000000,1);
+    g.strokeCircle(112,410,18); g.strokeCircle(278,410,18);
+    g.lineStyle(2,0x000000,0.55);
+    [-8,-2,4,10].forEach(dx => { g.lineBetween(112+dx,396,112+dx,405); g.lineBetween(278+dx,396,278+dx,405); });
+    g.lineStyle(ls,0x000000,1);
+    g.strokeEllipse(cx,406,172,152);
+    g.lineStyle(2,0x000000,0.4);
+    g.strokeEllipse(cx,416,94,108);
+    g.lineStyle(ls,0x000000,1);
+    g.strokeCircle(cx,236,62);
+    g.strokeCircle(cx-72,239,28); g.strokeCircle(cx+72,239,28);
+    g.lineStyle(2,0x000000,0.5);
+    g.strokeCircle(cx-72,239,16); g.strokeCircle(cx+72,239,16);
+    g.lineStyle(ls,0x000000,1);
+    g.strokeEllipse(cx,261,80,66);
+    g.fillStyle(0x000000,1);
+    g.fillCircle(cx-20,229,8); g.fillCircle(cx+20,229,8);
+    g.fillStyle(0xffffff,1);
+    g.fillCircle(cx-18,227,3); g.fillCircle(cx+18,227,3);
+    g.fillStyle(0x000000,0.7);
+    g.fillEllipse(cx-6,254,10,8); g.fillEllipse(cx+6,254,10,8);
+    g.lineStyle(2.5,0x000000,1);
+    g.strokePoints([{x:cx-12,y:269},{x:cx,y:277},{x:cx+12,y:269}],false);
+    g.lineStyle(3.5,0x000000,1);
+    g.strokePoints([{x:278,y:480},{x:304,y:460},{x:314,y:438},{x:304,y:416},{x:318,y:398}],false);
+  }
+
+  // ─── PENGUIN ─────────────────────────────────────────────────────────────────
+  _zones_penguin() {
+    const cx = 195;
+    this._z(g => { g.fillEllipse(cx,388,155,248); g.fillEllipse(cx-96,358,56,128); g.fillEllipse(cx+96,358,56,128); },
+      new Phaser.Geom.Rectangle(68,264,254,256), Phaser.Geom.Rectangle.Contains);
+    this._z(g => g.fillCircle(cx,187,63),
+      new Phaser.Geom.Circle(cx,187,63), Phaser.Geom.Circle.Contains);
+    this._z(g => g.fillEllipse(cx,403,88,170),
+      new Phaser.Geom.Ellipse(cx,403,88,170), Phaser.Geom.Ellipse.Contains);
+    this._z(g => g.fillTriangle(cx-14,243,cx+14,243,cx,270),
+      new Phaser.Geom.Triangle(cx-14,243,cx+14,243,cx,270), Phaser.Geom.Triangle.Contains);
+  }
+
+  _draw_penguin(g) {
+    const cx = 195, ls = 3.5;
+    g.lineStyle(ls,0x000000,1);
+    g.strokeEllipse(cx,388,155,248);
+    g.strokeEllipse(cx-96,358,56,128); g.strokeEllipse(cx+96,358,56,128);
+    g.strokeEllipse(cx-30,517,46,20); g.strokeEllipse(cx+30,517,46,20);
+    g.strokeEllipse(cx,403,88,170);
+    g.strokeCircle(cx,187,63);
+    g.fillStyle(0xffffff,1);
+    g.fillCircle(cx-34,198,16); g.fillCircle(cx+34,198,16);
+    g.lineStyle(2,0x000000,0.45);
+    g.strokeCircle(cx-34,198,16); g.strokeCircle(cx+34,198,16);
+    g.fillStyle(0x000000,1);
+    g.fillCircle(cx-18,176,9); g.fillCircle(cx+18,176,9);
+    g.fillStyle(0xffffff,1);
+    g.fillCircle(cx-15,173,4); g.fillCircle(cx+15,173,4);
+    g.lineStyle(ls,0x000000,1);
+    g.strokeTriangle(cx-14,243,cx+14,243,cx,270);
+    g.lineStyle(2,0x000000,0.5);
+    g.lineBetween(cx-14,243,cx+14,243);
+  }
+
+  // ─── BEAR ────────────────────────────────────────────────────────────────────
+  _zones_bear() {
+    const cx = 195;
+    this._z(g => { g.fillEllipse(cx-96,386,52,88); g.fillEllipse(cx+96,386,52,88); },
+      new Phaser.Geom.Rectangle(cx-122,342,244,88), Phaser.Geom.Rectangle.Contains);
+    this._z(g => { g.fillEllipse(cx-30,489,56,28); g.fillEllipse(cx+30,489,56,28); },
+      new Phaser.Geom.Rectangle(cx-58,475,116,28), Phaser.Geom.Rectangle.Contains);
+    this._z(g => g.fillEllipse(cx,410,178,160),
+      new Phaser.Geom.Ellipse(cx,410,178,160), Phaser.Geom.Ellipse.Contains);
+    this._z(g => { g.fillCircle(cx-62,162,32); g.fillCircle(cx+62,162,32); },
+      new Phaser.Geom.Rectangle(cx-94,130,188,64), Phaser.Geom.Rectangle.Contains);
+    this._z(g => g.fillCircle(cx,231,70),
+      new Phaser.Geom.Circle(cx,231,70), Phaser.Geom.Circle.Contains);
+    this._z(g => { g.fillCircle(cx-62,162,18); g.fillCircle(cx+62,162,18); },
+      new Phaser.Geom.Rectangle(cx-80,144,160,36), Phaser.Geom.Rectangle.Contains);
+    this._z(g => g.fillEllipse(cx,268,76,52),
+      new Phaser.Geom.Ellipse(cx,268,76,52), Phaser.Geom.Ellipse.Contains);
+  }
+
+  _draw_bear(g) {
+    const cx = 195, ls = 3.5;
+    g.lineStyle(ls,0x000000,1);
+    g.strokeEllipse(cx-30,489,56,28); g.strokeEllipse(cx+30,489,56,28);
+    g.lineStyle(2,0x000000,0.5);
+    [-14,-4,6,16].forEach(dx => { g.lineBetween(cx-30+dx,479,cx-30+dx,489); g.lineBetween(cx+30+dx,479,cx+30+dx,489); });
+    g.lineStyle(ls,0x000000,1);
+    g.strokeEllipse(cx-96,386,52,88); g.strokeEllipse(cx+96,386,52,88);
+    g.strokeEllipse(cx,410,178,160);
+    g.lineStyle(2,0x000000,0.4);
+    g.strokeEllipse(cx,418,96,112);
+    g.lineStyle(ls,0x000000,1);
+    g.strokeCircle(cx-62,162,32); g.strokeCircle(cx+62,162,32);
+    g.lineStyle(2,0x000000,0.55);
+    g.strokeCircle(cx-62,162,18); g.strokeCircle(cx+62,162,18);
+    g.lineStyle(ls,0x000000,1);
+    g.strokeCircle(cx,231,70);
+    g.fillStyle(0x000000,1);
+    g.fillCircle(cx-24,217,9); g.fillCircle(cx+24,217,9);
+    g.fillStyle(0xffffff,1);
+    g.fillCircle(cx-21,214,4); g.fillCircle(cx+21,214,4);
+    g.lineStyle(ls,0x000000,1);
+    g.strokeEllipse(cx,268,76,52);
+    g.fillStyle(0x000000,1);
+    g.fillEllipse(cx,251,22,14);
+    g.lineStyle(2.5,0x000000,1);
+    g.lineBetween(cx,258,cx,270);
+    g.lineBetween(cx,270,cx-14,279); g.lineBetween(cx,270,cx+14,279);
   }
 
   _draw_ark(g) {
