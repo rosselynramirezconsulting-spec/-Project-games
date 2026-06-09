@@ -607,20 +607,21 @@ export default class GameScene extends Phaser.Scene {
       fp.body.velocity.y = fp._fallSpeed;
 
       if (this._currentFallingPlat === fp) {
-        const noahCX  = noah.body.x + noah.body.width / 2;
-        const noahBott = noah.body.y + noah.body.height;
-        const platLeft  = fp.body.x - 20;
+        const platTop  = fp.body.y;
+        const platLeft = fp.body.x - 20;
         const platRight = fp.body.x + fp.body.width + 20;
-        const platTop   = fp.body.y;
+        const noahCX   = noah.x;
 
-        // Detach only if Noah has walked off the side or fallen below the platform
-        if (noahCX < platLeft || noahCX > platRight || noahBott > platTop + 80) {
+        // Detach only if Noah has clearly walked off the side
+        if (noahCX < platLeft || noahCX > platRight) {
           this._currentFallingPlat = null;
         } else {
-          // Carry Noah for the whole fall — jump stays available the entire time
-          this._ridingFalling = true;
-          noah.body.velocity.y = fp._fallSpeed + 4;
+          // Hard-sync Noah's body to the platform surface — no physics gap possible
+          noah.body.y = platTop - noah.body.height;
+          noah.y      = noah.body.y + noah.body.halfHeight;
+          noah.body.velocity.y = fp._fallSpeed;
           noah.body.gravity.y  = 0;
+          this._ridingFalling  = true;
         }
       }
 
