@@ -631,6 +631,10 @@ export default class GameScene extends Phaser.Scene {
       }
     }
 
+    // DEBUG — remove after testing
+    if (!this._dbgTxt) this._dbgTxt = this.add.text(8, 120, '', { fontSize: '13px', fill: '#ff0', stroke: '#000', strokeThickness: 3 }).setScrollFactor(0).setDepth(999);
+    this._dbgTxt.setText(`riding:${this._ridingFalling} plat:${!!this._currentFallingPlat} blk:${noah.body.blocked.down} active:${this._fallingActive.length}`);
+
     // Jump — held finger auto-jumps on landing; quick tap gives 300 ms buffer
     const jumpReady = this.cursors.up.isDown || jTouched || (time - this._jumpLastPressed < 1500);
     if (jumpReady && (noah.body.blocked.down || this._ridingFalling)) {
@@ -638,7 +642,7 @@ export default class GameScene extends Phaser.Scene {
       noah.body.gravity.y = 680;
       this._jumpLastPressed    = -1000;
       this._ridingFalling      = false;
-      this._currentFallingPlat = null; // detach on jump
+      this._currentFallingPlat = null;
       this.sound.collect();
     }
 
