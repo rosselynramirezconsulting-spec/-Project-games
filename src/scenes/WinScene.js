@@ -27,10 +27,10 @@ export default class WinScene extends Phaser.Scene {
     // Drifting clouds
     this._addClouds();
 
-    // Ocean
-    this.add.rectangle(W / 2, waterY + (H - waterY) / 2, W, H - waterY, 0x0d47a1);
-    this.add.rectangle(W / 2, waterY,      W, 14, 0x42a5f5, 0.95);
-    this.add.rectangle(W / 2, waterY + 10, W, 7,  0x90caf9, 0.55);
+    // Ocean body below water surface
+    this.add.rectangle(W / 2, waterY + 120 + (H - waterY - 120) / 2, W, H - waterY - 120, 0x0d47a1);
+    // Water surface from custom texture
+    this.add.image(W / 2, waterY + 60, 'water').setDepth(4);
 
     // Wave shimmer repeating
     this.time.addEvent({
