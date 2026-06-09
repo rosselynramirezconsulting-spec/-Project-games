@@ -100,9 +100,7 @@ export default class GameScene extends Phaser.Scene {
     this._waterSpeed  = 10 + this.level * 5; // px/s; lvl1=15, lvl5=35
     const waterBlockH = 2400;
     this._waterGfx    = this.add.rectangle(195, this._waterLevel + waterBlockH / 2, 390, waterBlockH, 0x0d47a1, 0.82).setDepth(6);
-    this._waterLine   = this.add.rectangle(195, this._waterLevel, 390, 10, 0x42a5f5, 0.95).setDepth(7);
-    // Small wave shimmer on surface
-    this._waterShimmer = this.add.rectangle(195, this._waterLevel - 4, 390, 5, 0x90caf9, 0.6).setDepth(7);
+    this._waterSurface = this.add.tileSprite(195, this._waterLevel + 60, 390, 120, 'water').setDepth(7);
 
     // Noah
     this.noah = this.physics.add.sprite(195, WORLD_H - 120, 'noah').setDepth(5);
@@ -668,8 +666,7 @@ export default class GameScene extends Phaser.Scene {
     if (!this._waterPaused) this._waterLevel -= this._waterSpeed * dt;
     const waterBlockH = 2400;
     this._waterGfx.setPosition(195, this._waterLevel + waterBlockH / 2);
-    this._waterLine.setPosition(195, this._waterLevel);
-    this._waterShimmer.setPosition(195, this._waterLevel - 5);
+    this._waterSurface.setPosition(195, this._waterLevel + 60);
 
     // Death from water
     if (!this._dying && noah.y + 20 >= this._waterLevel) {
