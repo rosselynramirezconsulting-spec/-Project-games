@@ -354,9 +354,9 @@ export default class GameScene extends Phaser.Scene {
   // ── Falling platform logic ───────────────────────────────────────────
   _onFallingCollide(noah, plat) {
     if (!noah.body.blocked.down) return;
-    if (plat.triggered) return;
+    this._currentFallingPlat = plat; // always re-attach on contact
+    if (plat.triggered) return;      // shake already running — don't restart it
     plat.triggered = true;
-    this._currentFallingPlat = plat; // attach Noah immediately
 
     // Shake sideways for ~450ms, then drop
     this.tweens.add({
@@ -610,13 +610,16 @@ export default class GameScene extends Phaser.Scene {
       fp.body.position.y = fp.y - fp.body.halfHeight;
 
       if (this._currentFallingPlat === fp) {
+        const platTop   = fp.y - fp.displayHeight / 2;
+        const noahBott  = noah.y + noah.displayHeight / 2;
         const platLeft  = fp.x - fp.displayWidth  / 2 - 20;
         const platRight = fp.x + fp.displayWidth  / 2 + 20;
 
-        if (noah.x < platLeft || noah.x > platRight) {
+        // Detach when Noah has clearly jumped above the platform
+        if (noahBott < platTop - 24 || noah.x < platLeft || noah.x > platRight) {
           this._currentFallingPlat = null;
         } else {
-          // Move Noah by the exact same delta — no physics gap ever
+          // Carry Noah down with the platform
           noah.y += dy;
           noah.body.velocity.y = 0;
           noah.body.gravity.y  = 0;
@@ -639,10 +642,9 @@ export default class GameScene extends Phaser.Scene {
     const jumpReady = this.cursors.up.isDown || jTouched || (time - this._jumpLastPressed < 1500);
     if (jumpReady && (noah.body.blocked.down || this._ridingFalling)) {
       noah.setVelocityY(JUMP_FORCE);
-      noah.body.gravity.y = 680;
-      this._jumpLastPressed    = -1000;
-      this._ridingFalling      = false;
-      this._currentFallingPlat = null;
+      noah.body.gravity.y   = 680;
+      this._jumpLastPressed = -1000;
+      this._ridingFalling   = false;
       this.sound.collect();
     }
 
