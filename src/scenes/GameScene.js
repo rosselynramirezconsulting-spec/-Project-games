@@ -610,16 +610,12 @@ export default class GameScene extends Phaser.Scene {
       fp.body.position.y = fp.y - fp.body.halfHeight;
 
       if (this._currentFallingPlat === fp) {
-        const platTop   = fp.y - fp.displayHeight / 2;
-        const noahBott  = noah.y + noah.displayHeight / 2;
         const platLeft  = fp.x - fp.displayWidth  / 2 - 20;
         const platRight = fp.x + fp.displayWidth  / 2 + 20;
 
-        // Detach when Noah has clearly jumped above the platform
-        if (noahBott < platTop - 24 || noah.x < platLeft || noah.x > platRight) {
+        if (noah.x < platLeft || noah.x > platRight) {
           this._currentFallingPlat = null;
         } else {
-          // Carry Noah down with the platform
           noah.y += dy;
           noah.body.velocity.y = 0;
           noah.body.gravity.y  = 0;
@@ -642,9 +638,10 @@ export default class GameScene extends Phaser.Scene {
     const jumpReady = this.cursors.up.isDown || jTouched || (time - this._jumpLastPressed < 1500);
     if (jumpReady && (noah.body.blocked.down || this._ridingFalling)) {
       noah.setVelocityY(JUMP_FORCE);
-      noah.body.gravity.y   = 680;
-      this._jumpLastPressed = -1000;
-      this._ridingFalling   = false;
+      noah.body.gravity.y      = 680;
+      this._jumpLastPressed    = -1000;
+      this._ridingFalling      = false;
+      this._currentFallingPlat = null; // detach — _fromAbove prevents re-attach until Noah falls back down
       this.sound.collect();
     }
 
