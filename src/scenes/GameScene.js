@@ -84,8 +84,9 @@ export default class GameScene extends Phaser.Scene {
     this.crumblePlatGroup = this.physics.add.staticGroup();
     this.bouncePlatGroup  = this.physics.add.staticGroup();
     this.fallingPlatGroup = this.physics.add.group();
-    this._fallingActive   = []; // platforms currently falling
-    this._ridingFalling   = false;
+    this._fallingActive      = []; // platforms currently falling
+    this._ridingFalling      = false;
+    this._currentFallingPlat = null; // the specific platform Noah is attached to
 
     this._generatePlatforms();
     this._spawnAnimals();
@@ -355,6 +356,7 @@ export default class GameScene extends Phaser.Scene {
     if (!noah.body.blocked.down) return;
     if (plat.triggered) return;
     plat.triggered = true;
+    this._currentFallingPlat = plat; // attach Noah immediately
 
     // Shake sideways for ~450ms, then drop
     this.tweens.add({
@@ -366,7 +368,6 @@ export default class GameScene extends Phaser.Scene {
       ease: 'Linear',
       onComplete: () => {
         if (!plat.active) return;
-        // Keep body enabled — Noah can still land/jump while platform falls
         plat._fallSpeed = 70;
         this._fallingActive.push(plat);
       },
@@ -592,53 +593,52 @@ export default class GameScene extends Phaser.Scene {
     else if (this.cursors.right.isDown || this.rightHeld) { noah.setVelocityX(NOAH_SPEED); noah.setFlipX(false); }
 
     // Falling platform carry — must run before jump check
-    // Restore gravity each frame; override below if riding a falling platform
     noah.body.gravity.y = 680;
-    const wasRidingFalling = this._ridingFalling;
     this._ridingFalling = false;
     for (let i = this._fallingActive.length - 1; i >= 0; i--) {
       const fp = this._fallingActive[i];
-      if (!fp.active) { this._fallingActive.splice(i, 1); continue; }
+      if (!fp.active) {
+        if (this._currentFallingPlat === fp) this._currentFallingPlat = null;
+        this._fallingActive.splice(i, 1);
+        continue;
+      }
 
-      // Accelerate the fall
       fp._fallSpeed = Math.min(fp._fallSpeed + 280 * dt, 480);
       fp.body.velocity.y = fp._fallSpeed;
 
-      // Check if Noah is riding this platform — wide threshold so fast falls don't break contact
-      const noahBott = noah.body.y + noah.body.height;
-      const platTop  = fp.body.y;
-      const platLeft = fp.body.x;
-      const platRight = fp.body.x + fp.body.width;
-      const noahCX   = noah.body.x + noah.body.width / 2;
-      if (
-        Math.abs(noahBott - platTop) < 28 &&
-        noahCX >= platLeft - 10 && noahCX <= platRight + 10
-      ) {
-        this._ridingFalling = true;
-        noah.body.velocity.y = fp._fallSpeed + 4;
-        noah.body.gravity.y  = 0;
+      if (this._currentFallingPlat === fp) {
+        const noahCX  = noah.body.x + noah.body.width / 2;
+        const noahBott = noah.body.y + noah.body.height;
+        const platLeft  = fp.body.x - 20;
+        const platRight = fp.body.x + fp.body.width + 20;
+        const platTop   = fp.body.y;
+
+        // Detach only if Noah has walked off the side or fallen below the platform
+        if (noahCX < platLeft || noahCX > platRight || noahBott > platTop + 80) {
+          this._currentFallingPlat = null;
+        } else {
+          // Carry Noah for the whole fall — jump stays available the entire time
+          this._ridingFalling = true;
+          noah.body.velocity.y = fp._fallSpeed + 4;
+          noah.body.gravity.y  = 0;
+        }
       }
 
       if (fp.y > this._waterLevel + 300) {
+        if (this._currentFallingPlat === fp) this._currentFallingPlat = null;
         this._fallingActive.splice(i, 1);
         fp.destroy();
       }
-    }
-    // Coyote time: keep jump window open 180ms after leaving a falling platform
-    if (wasRidingFalling && !this._ridingFalling) {
-      this._coyoteFallingEnd = time + 180;
-    }
-    if (time < this._coyoteFallingEnd) {
-      this._ridingFalling = true;
     }
 
     // Jump — held finger auto-jumps on landing; quick tap gives 300 ms buffer
     const jumpReady = this.cursors.up.isDown || jTouched || (time - this._jumpLastPressed < 1500);
     if (jumpReady && (noah.body.blocked.down || this._ridingFalling)) {
       noah.setVelocityY(JUMP_FORCE);
-      noah.body.gravity.y = 680; // restore gravity immediately on jump
-      this._jumpLastPressed = -1000; // consumed
-      this._ridingFalling = false;
+      noah.body.gravity.y = 680;
+      this._jumpLastPressed    = -1000;
+      this._ridingFalling      = false;
+      this._currentFallingPlat = null; // detach on jump
       this.sound.collect();
     }
 
