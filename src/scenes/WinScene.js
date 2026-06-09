@@ -14,8 +14,8 @@ export default class WinScene extends Phaser.Scene {
     const W = 390, H = 844;
     const waterY = 555; // ocean surface y
 
-    // Sky
-    this.add.rectangle(W / 2, waterY / 2, W, waterY, 0x87CEEB);
+    // Background
+    this.add.image(W / 2, H / 2, 'background').setDepth(0);
 
     // Sun
     this.add.circle(68, 90, 44, 0xffd700, 0.92);
