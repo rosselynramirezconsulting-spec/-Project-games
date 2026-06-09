@@ -24,9 +24,6 @@ export default class WinScene extends Phaser.Scene {
     // Rainbow
     this._drawRainbow(W / 2, waterY - 30);
 
-    // Drifting clouds
-    this._addClouds();
-
     // Ocean body below water surface
     this.add.rectangle(W / 2, waterY + 120 + (H - waterY - 120) / 2, W, H - waterY - 120, 0x0d47a1);
     // Water surface from custom texture
