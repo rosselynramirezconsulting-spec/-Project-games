@@ -603,23 +603,22 @@ export default class GameScene extends Phaser.Scene {
         continue;
       }
 
+      // Move platform directly — no velocity, avoids physics conflicts
       fp._fallSpeed = Math.min(fp._fallSpeed + 280 * dt, 480);
-      fp.body.velocity.y = fp._fallSpeed;
+      const dy = fp._fallSpeed * dt;
+      fp.y += dy;
+      fp.body.position.y = fp.y - fp.body.halfHeight;
 
       if (this._currentFallingPlat === fp) {
-        const platTop  = fp.body.y;
-        const platLeft = fp.body.x - 20;
-        const platRight = fp.body.x + fp.body.width + 20;
-        const noahCX   = noah.x;
+        const platLeft  = fp.x - fp.displayWidth  / 2 - 20;
+        const platRight = fp.x + fp.displayWidth  / 2 + 20;
 
-        // Detach only if Noah has clearly walked off the side
-        if (noahCX < platLeft || noahCX > platRight) {
+        if (noah.x < platLeft || noah.x > platRight) {
           this._currentFallingPlat = null;
         } else {
-          // Hard-sync Noah's body to the platform surface — no physics gap possible
-          noah.body.y = platTop - noah.body.height;
-          noah.y      = noah.body.y + noah.body.halfHeight;
-          noah.body.velocity.y = fp._fallSpeed;
+          // Move Noah by the exact same delta — no physics gap ever
+          noah.y += dy;
+          noah.body.velocity.y = 0;
           noah.body.gravity.y  = 0;
           this._ridingFalling  = true;
         }
