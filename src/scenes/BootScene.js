@@ -1,4 +1,4 @@
-import { drawAnimal, drawBackground, drawRainDrop, drawCoin, drawHeart } from '../utils/Graphics.js';
+import { drawAnimal, drawRainDrop, drawCoin, drawHeart } from '../utils/Graphics.js';
 
 export default class BootScene extends Phaser.Scene {
   constructor() {
@@ -12,6 +12,7 @@ export default class BootScene extends Phaser.Scene {
     this.load.image('platform', 'assets/platform.png');
     this.load.image('iceplatform', 'assets/iceplatform.png');
     this.load.image('water', 'assets/water.png');
+    this.load.image('background', 'assets/background.png');
   }
 
   create() {
@@ -22,9 +23,7 @@ export default class BootScene extends Phaser.Scene {
   generateTextures() {
     const g = this.make.graphics({ x: 0, y: 0, add: false });
 
-    drawBackground(g);
-    g.generateTexture('background', 390, 844);
-    g.clear();
+    // 'background' texture loaded from assets/background.png in preload()
 
     // 'water' texture loaded from assets/water.png in preload()
 
