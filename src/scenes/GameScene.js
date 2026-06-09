@@ -119,10 +119,16 @@ export default class GameScene extends Phaser.Scene {
     // Camera — start high enough so Noah is above the control buttons (bottom 142px)
     this.camMinScrollY = WORLD_H - 702;
 
-    // Rain density increases per level
+    // Rain: intensity upgrades every 2-4 levels (deterministic per tier)
+    let _rainTier = 0, _rainNext = 0;
+    while (_rainNext + ((_rainTier * 5 + 2) % 3 + 2) <= this.level) {
+      _rainNext += (_rainTier * 5 + 2) % 3 + 2;
+      _rainTier++;
+    }
+    this._rainTier = _rainTier;
     this.rainGroup = this.add.group();
     this.time.addEvent({
-      delay: Math.max(55, 120 - this.level * 12),
+      delay: Math.max(30, 130 - _rainTier * 22),
       callback: this._spawnRain,
       callbackScope: this,
       loop: true,
@@ -240,6 +246,7 @@ export default class GameScene extends Phaser.Scene {
           .setDisplaySize(p.w, 18);
         img.setImmovable(true);
         img.body.allowGravity = false;
+        img.body.setSize(p.w, 18, true); // sync body to display size
         img.setTint(0xdd88ff); // purple = falls when stepped on
         img.triggered = false;
         img._fallSpeed = 0;
@@ -376,10 +383,15 @@ export default class GameScene extends Phaser.Scene {
 
   // ── Rain ─────────────────────────────────────────────────────────────
   _spawnRain() {
-    const x    = Phaser.Math.Between(0, 390);
-    const drop = this.add.image(x, this.cameras.main.scrollY - 10, 'raindrop')
-      .setDepth(1).setAlpha(0.55);
-    this.rainGroup.add(drop);
+    const tier  = this._rainTier || 0;
+    const count = 1 + Math.floor(tier / 2); // extra drops at higher tiers
+    for (let i = 0; i < count; i++) {
+      const x    = Phaser.Math.Between(0, 390);
+      const drop = this.add.image(x, this.cameras.main.scrollY - 10, 'raindrop')
+        .setDepth(1).setAlpha(0.45 + tier * 0.06)
+        .setScale(1 + tier * 0.12);
+      this.rainGroup.add(drop);
+    }
   }
 
   // ── Float text ───────────────────────────────────────────────────────
@@ -697,8 +709,8 @@ export default class GameScene extends Phaser.Scene {
     // Fall below camera
     if (noah.y > this.cameras.main.scrollY + 844 + 80) this.handleDeath();
 
-    // Win — only when grounded or falling (not mid-jump going up past the ark)
-    if (!this._won && !this._dying && noah.y < ARK_Y + 130 && noah.body.velocity.y >= -100) this.handleWin();
+    // Win — only when Noah is standing on the top platform (blocked + close to ark)
+    if (!this._won && !this._dying && noah.y < ARK_Y + 110 && noah.body.blocked.down) this.handleWin();
 
     // UI updates
     const progress = Phaser.Math.Clamp((WORLD_H - noah.y) / (WORLD_H - ARK_Y), 0, 1);
