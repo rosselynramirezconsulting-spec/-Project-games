@@ -400,6 +400,7 @@ export default class GameScene extends Phaser.Scene {
     const W = 390, H = 844, BY = H - 72;
     this._ctrlTop = H - 142;
     this._jumpLastPressed = -1000;
+    this._coyoteFallingEnd = -1000;
 
     // Track active touch IDs per zone using DOM events.
     // More reliable on iOS Safari than Phaser's pointer polling — survives
@@ -593,6 +594,7 @@ export default class GameScene extends Phaser.Scene {
     // Falling platform carry — must run before jump check
     // Restore gravity each frame; override below if riding a falling platform
     noah.body.gravity.y = 680;
+    const wasRidingFalling = this._ridingFalling;
     this._ridingFalling = false;
     for (let i = this._fallingActive.length - 1; i >= 0; i--) {
       const fp = this._fallingActive[i];
@@ -602,27 +604,32 @@ export default class GameScene extends Phaser.Scene {
       fp._fallSpeed = Math.min(fp._fallSpeed + 280 * dt, 480);
       fp.body.velocity.y = fp._fallSpeed;
 
-      // Check if Noah is riding this platform (body-coordinate proximity)
+      // Check if Noah is riding this platform — wide threshold so fast falls don't break contact
       const noahBott = noah.body.y + noah.body.height;
       const platTop  = fp.body.y;
       const platLeft = fp.body.x;
       const platRight = fp.body.x + fp.body.width;
       const noahCX   = noah.body.x + noah.body.width / 2;
       if (
-        Math.abs(noahBott - platTop) < 14 &&
-        noahCX >= platLeft - 6 && noahCX <= platRight + 6 &&
-        noah.body.velocity.y >= 0
+        Math.abs(noahBott - platTop) < 28 &&
+        noahCX >= platLeft - 10 && noahCX <= platRight + 10
       ) {
         this._ridingFalling = true;
-        // Match Noah's velocity + a tiny extra so physics detects contact
         noah.body.velocity.y = fp._fallSpeed + 4;
-        noah.body.gravity.y  = 0; // suppress extra gravity while riding
+        noah.body.gravity.y  = 0;
       }
 
       if (fp.y > this._waterLevel + 300) {
         this._fallingActive.splice(i, 1);
         fp.destroy();
       }
+    }
+    // Coyote time: keep jump window open 180ms after leaving a falling platform
+    if (wasRidingFalling && !this._ridingFalling) {
+      this._coyoteFallingEnd = time + 180;
+    }
+    if (time < this._coyoteFallingEnd) {
+      this._ridingFalling = true;
     }
 
     // Jump — held finger auto-jumps on landing; quick tap gives 300 ms buffer
