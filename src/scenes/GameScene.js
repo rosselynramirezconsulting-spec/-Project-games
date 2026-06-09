@@ -69,11 +69,7 @@ export default class GameScene extends Phaser.Scene {
     // Extend camera bounds 142px below world so Noah clears the control buttons
     this.cameras.main.setBounds(0, 0, 390, WORLD_H + 142);
     this.cameras.main.setBackgroundColor('#87CEEB');
-
-    // Altitude zone tints
-    this.add.rectangle(195, 2600, 390, 600, 0x5cb85c, 0.18);
-    this.add.rectangle(195, 1400, 390, 1200, 0x1a6bb5, 0.12);
-    this.add.rectangle(195, 400,  390, 800,  0xaaccff, 0.15);
+    this.add.tileSprite(195, WORLD_H / 2, 390, WORLD_H, 'background').setDepth(0);
 
     this._addClouds();
 
