@@ -69,9 +69,9 @@ export default class GameScene extends Phaser.Scene {
     // Extend camera bounds 142px below world so Noah clears the control buttons
     this.cameras.main.setBounds(0, 0, 390, WORLD_H + 142);
     this.cameras.main.setBackgroundColor('#87CEEB');
-    this.add.tileSprite(195, WORLD_H / 2, 390, WORLD_H, 'background').setDepth(0);
-
-    this._addClouds();
+    for (let i = 0; i < 4; i++) {
+      this.add.image(195, 422 + i * 844, 'background').setDepth(0);
+    }
 
     this._animalsCollected = 0;
 
