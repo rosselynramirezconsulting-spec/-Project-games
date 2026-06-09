@@ -616,8 +616,9 @@ export default class GameScene extends Phaser.Scene {
         if (noah.x < platLeft || noah.x > platRight) {
           this._currentFallingPlat = null;
         } else {
-          noah.y += dy;
-          noah.body.velocity.y = 0;
+          // Match velocity so physics moves the body (and game object follows).
+          // This lets the jump simply override velocity.y with JUMP_FORCE.
+          noah.body.velocity.y = fp._fallSpeed;
           noah.body.gravity.y  = 0;
           this._ridingFalling  = true;
         }
@@ -629,10 +630,6 @@ export default class GameScene extends Phaser.Scene {
         fp.destroy();
       }
     }
-
-    // DEBUG — remove after testing
-    if (!this._dbgTxt) this._dbgTxt = this.add.text(8, 120, '', { fontSize: '13px', fill: '#ff0', stroke: '#000', strokeThickness: 3 }).setScrollFactor(0).setDepth(999);
-    this._dbgTxt.setText(`riding:${this._ridingFalling} plat:${!!this._currentFallingPlat} blk:${noah.body.blocked.down} active:${this._fallingActive.length}`);
 
     // Jump — held finger auto-jumps on landing; quick tap gives 300 ms buffer
     const jumpReady = this.cursors.up.isDown || jTouched || (time - this._jumpLastPressed < 1500);
