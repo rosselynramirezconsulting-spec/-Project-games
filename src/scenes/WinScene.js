@@ -132,9 +132,9 @@ export default class WinScene extends Phaser.Scene {
     menuBtn.on('pointerdown', () => this.scene.start('Menu'));
   }
 
-  _showShareCard() {
+  async _showShareCard() {
     const W = 390, H = 844;
-    const cv = buildCardCanvas({
+    const cv = await buildCardCanvas({
       score: this.finalScore,
       level: this.level,
       animalsCollected: this.animalsCollected,

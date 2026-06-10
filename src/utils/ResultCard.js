@@ -1,10 +1,27 @@
 const GAME_URL = 'https://rosselynramirezconsulting-spec.github.io/-Project-games/';
 
-export function buildCardCanvas({ score, level, animalsCollected = 0, won }) {
-  const W = 350, H = 196;
+function loadImg(src) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload  = () => resolve(img);
+    img.onerror = () => resolve(null); // graceful: draw card without image if it fails
+    img.src = src;
+  });
+}
+
+export async function buildCardCanvas({ score, level, animalsCollected = 0, won }) {
+  const [noahImg, arkImg] = await Promise.all([
+    loadImg('assets/noah.png'),
+    loadImg(won ? 'assets/ark-open.png' : 'assets/ark.png'),
+  ]);
+
+  const W = 350, H = 200;
   const cv = document.createElement('canvas');
   cv.width = W; cv.height = H;
   const ctx = cv.getContext('2d');
+
+  // Preserve pixel-art crispness
+  ctx.imageSmoothingEnabled = false;
 
   // Background gradient
   const bg = ctx.createLinearGradient(0, 0, 0, H);
@@ -18,38 +35,57 @@ export function buildCardCanvas({ score, level, animalsCollected = 0, won }) {
   ctx.lineWidth = 3;
   ctx.strokeRect(2, 2, W - 4, H - 4);
 
-  // Inner glow border
+  // Inner glow
   ctx.strokeStyle = won ? 'rgba(255,215,0,0.18)' : 'rgba(58,106,154,0.18)';
   ctx.lineWidth = 1;
   ctx.strokeRect(7, 7, W - 14, H - 14);
 
-  // Game title
+  // ── Pixel-art sprites ────────────────────────────────────────────────
+  // Noah — left side, vertically centered in the middle band
+  if (noahImg) {
+    // Scale up 3× so individual pixels are clearly visible
+    const scale = 3;
+    const dw = noahImg.naturalWidth  * scale;
+    const dh = noahImg.naturalHeight * scale;
+    ctx.drawImage(noahImg, 14, Math.round((H - dh) / 2) + 8, dw, dh);
+  }
+
+  // Ark — right side (only on win card)
+  if (won && arkImg) {
+    const scale = 2;
+    const dw = arkImg.naturalWidth  * scale;
+    const dh = arkImg.naturalHeight * scale;
+    ctx.drawImage(arkImg, W - dw - 10, Math.round((H - dh) / 2) + 10, dw, dh);
+  }
+
+  // ── Text (drawn on top of sprites) ──────────────────────────────────
   ctx.textAlign = 'center';
+
+  // Game title
   ctx.font = 'bold 17px Arial';
   ctx.fillStyle = '#ffe066';
-  ctx.fillText("Don't Drown, Noah! 🌊", W / 2, 24);
+  ctx.fillText("Don't Drown, Noah! 🌊", W / 2, 22);
 
   // Divider
   ctx.beginPath();
   ctx.strokeStyle = won ? 'rgba(255,215,0,0.35)' : 'rgba(58,106,154,0.35)';
   ctx.lineWidth = 1;
-  ctx.moveTo(20, 33); ctx.lineTo(W - 20, 33);
+  ctx.moveTo(20, 30); ctx.lineTo(W - 20, 30);
   ctx.stroke();
 
-  // Result
-  ctx.font = 'bold 19px Arial';
+  // Result label
+  ctx.font = 'bold 18px Arial';
   ctx.fillStyle = won ? '#44ff88' : '#ff5555';
   ctx.fillText(
     won ? `🏆  Level ${level} Complete!` : `💀  Drowned at Level ${level}`,
-    W / 2, 57,
+    W / 2, 52,
   );
 
-  // Score hero
-  ctx.font = 'bold 60px Arial';
+  // Score — hero number, centered in the card
+  ctx.font = 'bold 58px Arial';
   ctx.fillStyle = '#ffffff';
   ctx.fillText(score, W / 2, 118);
 
-  // POINTS label
   ctx.font = 'bold 11px Arial';
   ctx.fillStyle = '#8899aa';
   ctx.fillText('POINTS', W / 2, 134);
@@ -60,14 +96,14 @@ export function buildCardCanvas({ score, level, animalsCollected = 0, won }) {
     ctx.fillStyle = '#ffcc44';
     ctx.fillText(
       `🦁  ${animalsCollected} animal${animalsCollected !== 1 ? 's' : ''} rescued`,
-      W / 2, 157,
+      W / 2, 156,
     );
   }
 
   // Challenge hashtag
   ctx.font = 'italic 12px Arial';
   ctx.fillStyle = '#7799bb';
-  ctx.fillText('Can you beat me? #DontDrownNoah', W / 2, 176);
+  ctx.fillText('Can you beat me? #DontDrownNoah', W / 2, 175);
 
   // URL watermark
   ctx.font = '9px Arial';
@@ -94,7 +130,7 @@ export async function shareCard(cv, shareText) {
     }
   }
 
-  // Desktop: download the image
+  // Desktop: download image
   try {
     const a = document.createElement('a');
     a.download = 'dont-drown-noah.png';
