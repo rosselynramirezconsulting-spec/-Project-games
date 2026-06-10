@@ -16,12 +16,12 @@ export default class MenuScene extends Phaser.Scene {
 
     // Title panel
     this.add.rectangle(W / 2, H * 0.11, 360, 86, 0x000000, 0.35).setOrigin(0.5);
-    this.add.text(W / 2, H * 0.09, "Noah's Ark", {
-      fontSize: '42px', fontFamily: 'Arial', fontStyle: 'bold',
+    this.add.text(W / 2, H * 0.087, "Don't Drown,", {
+      fontSize: '34px', fontFamily: 'Arial', fontStyle: 'bold',
       fill: '#ffe066', stroke: '#7a4200', strokeThickness: 5,
     }).setOrigin(0.5);
-    this.add.text(W / 2, H * 0.145, 'Adventure!', {
-      fontSize: '26px', fontFamily: 'Arial',
+    this.add.text(W / 2, H * 0.143, 'Noah! 🌊', {
+      fontSize: '40px', fontFamily: 'Arial', fontStyle: 'bold',
       fill: '#ffffff', stroke: '#7a4200', strokeThickness: 4,
     }).setOrigin(0.5);
 

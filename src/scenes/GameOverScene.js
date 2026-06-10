@@ -106,7 +106,7 @@ export default class GameOverScene extends Phaser.Scene {
     }).setOrigin(0.5);
     shareBtn.on('pointerdown', () => {
       const res = shareScore(
-        `🌊 I scored ${this.finalScore} pts and reached level ${this.level} in Noah's Ark Adventure! Can you beat me?`
+        `🌊 I scored ${this.finalScore} pts and reached level ${this.level} in Don't Drown, Noah! Can you beat me?`
       );
       if (res === 'copied') {
         const t = this.add.text(W / 2, H * 0.825 - 40, 'Link copied! 📋', {

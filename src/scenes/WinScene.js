@@ -122,7 +122,7 @@ export default class WinScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(11);
     shareBtn.on('pointerdown', () => {
       const res = shareScore(
-        `🦁 I rescued ${this.animalsCollected} animals and beat level ${this.level} with ${this.finalScore} pts in Noah's Ark Adventure! Can you beat me?`
+        `🦁 I rescued ${this.animalsCollected} animals and beat level ${this.level} with ${this.finalScore} pts in Don't Drown, Noah! Can you beat me?`
       );
       if (res === 'copied') {
         const t = this.add.text(W / 2, H - 165, 'Link copied! 📋', {
