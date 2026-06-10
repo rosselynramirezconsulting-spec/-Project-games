@@ -1,8 +1,11 @@
+import SoundManager from '../utils/SoundManager.js';
+
 export default class ColorScene extends Phaser.Scene {
   constructor() { super('Color'); }
 
   create() {
     const W = 390, H = 844;
+    this._snd   = new SoundManager();
     this._sel   = 0xff3333;
     this._page  = 0;
     this._pages = ['noah', 'elephant', 'giraffe', 'lion', 'zebra', 'monkey', 'rabbit', 'penguin', 'bear', 'ark'];
@@ -81,7 +84,7 @@ export default class ColorScene extends Phaser.Scene {
     const x0 = (390 - (perRow * sz + (perRow - 1) * gap)) / 2 + sz / 2;
     const y0 = H - 148;
     this.add.rectangle(195, H - 118, 390, 122, 0xfff0cc, 0.95).setDepth(9);
-    this.add.text(195, H - 192, 'Tap a part, then pick a color:', {
+    this.add.text(195, H - 192, 'Pick a color, then tap a part:', {
       fontSize: '13px', fontFamily: 'Arial', fontStyle: 'bold', fill: '#885500',
     }).setOrigin(0.5).setDepth(10);
     this._swatches = COLS.map((color, i) => {
@@ -89,7 +92,7 @@ export default class ColorScene extends Phaser.Scene {
       const sw = this.add.rectangle(x0 + col * (sz + gap), y0 + row * (sz + gap), sz - 2, sz - 2, color)
         .setDepth(10).setInteractive({ useHandCursor: true });
       sw.setStrokeStyle(3, 0x333333);
-      sw.on('pointerdown', () => { this._sel = color; this._refreshSwatches(); });
+      sw.on('pointerdown', () => { this._sel = color; this._refreshSwatches(); this._snd.tap(); });
       return { sw, color };
     });
     this._refreshSwatches();
@@ -125,6 +128,7 @@ export default class ColorScene extends Phaser.Scene {
       paint(this._sel);
       this._olGfx.clear();
       this[`_draw_${this._pages[this._page]}`](this._olGfx);
+      this._snd.tap();
     });
     this._zones.push(gfx);
   }
@@ -144,9 +148,6 @@ export default class ColorScene extends Phaser.Scene {
     // Head / skin
     this._z(g => g.fillCircle(cx, 204, 40),
       new Phaser.Geom.Circle(cx, 204, 40), Phaser.Geom.Circle.Contains);
-    // Beard — wider for more Noah-like look
-    this._z(g => g.fillTriangle(158, 240, 232, 240, cx, 298),
-      new Phaser.Geom.Triangle(158, 240, 232, 240, cx, 298), Phaser.Geom.Triangle.Contains);
     // Left arm (angled inward)
     this._z(g => g.fillTriangle(122, 248, 154, 248, 130, 328),
       new Phaser.Geom.Triangle(122, 248, 154, 248, 130, 328), Phaser.Geom.Triangle.Contains);
@@ -159,6 +160,9 @@ export default class ColorScene extends Phaser.Scene {
     // Skirt
     this._z(g => g.fillTriangle(135, 368, 255, 368, cx, 488),
       new Phaser.Geom.Triangle(135, 368, 255, 368, cx, 488), Phaser.Geom.Triangle.Contains);
+    // Beard — created after the robe so it wins input over it (it sits on top)
+    this._z(g => g.fillTriangle(158, 240, 232, 240, cx, 298),
+      new Phaser.Geom.Triangle(158, 240, 232, 240, cx, 298), Phaser.Geom.Triangle.Contains);
   }
 
   _draw_noah(g) {
@@ -244,14 +248,14 @@ export default class ColorScene extends Phaser.Scene {
     // Head
     this._z(g => g.fillCircle(cx, 228, 72),
       new Phaser.Geom.Circle(cx, 228, 72), Phaser.Geom.Circle.Contains);
-    // Trunk
+    // Body
+    this._z(g => g.fillEllipse(cx, 392, 204, 148),
+      new Phaser.Geom.Ellipse(cx, 392, 204, 148), Phaser.Geom.Ellipse.Contains);
+    // Trunk — after the body so it wins input where they overlap (trunk in front)
     this._z(g => {
       g.fillRect(178, 296, 34, 126);
       g.fillEllipse(195, 422, 50, 26);
     }, new Phaser.Geom.Rectangle(170, 296, 50, 152), Phaser.Geom.Rectangle.Contains);
-    // Body
-    this._z(g => g.fillEllipse(cx, 392, 204, 148),
-      new Phaser.Geom.Ellipse(cx, 392, 204, 148), Phaser.Geom.Ellipse.Contains);
     // Legs
     this._z(g => {
       g.fillRect(112, 452, 40, 70);
@@ -410,8 +414,8 @@ export default class ColorScene extends Phaser.Scene {
     g.lineStyle(2, 0x000000, 0.4);
     for (let a = 0; a < 360; a += 30) {
       const r = a * Math.PI / 180;
-      g.lineBetween(262 + Math.cos(r) * 17, 368 + Math.sin(r) * 17,
-        262 + Math.cos(r) * 24, 368 + Math.sin(r) * 24);
+      g.lineBetween(266 + Math.cos(r) * 17, 322 + Math.sin(r) * 17,
+        266 + Math.cos(r) * 24, 322 + Math.sin(r) * 24);
     }
   }
 
@@ -622,6 +626,10 @@ export default class ColorScene extends Phaser.Scene {
   // ─── ARK ───────────────────────────────────────────────────────────────────
   _zones_ark() {
     const cx = 195;
+    // Roof — created first so the cabins (created later) render above it and
+    // win input where they overlap; tapping the cabin no longer paints the roof
+    this._z(g => g.fillTriangle(46, 278, 344, 278, cx, 148),
+      new Phaser.Geom.Triangle(46, 278, 344, 278, cx, 148), Phaser.Geom.Triangle.Contains);
     // Hull
     this._z(g => g.fillRect(34, 382, 322, 116),
       new Phaser.Geom.Rectangle(34, 382, 322, 116), Phaser.Geom.Rectangle.Contains);
@@ -631,9 +639,6 @@ export default class ColorScene extends Phaser.Scene {
     // Upper cabin
     this._z(g => g.fillRect(108, 198, 174, 84),
       new Phaser.Geom.Rectangle(108, 198, 174, 84), Phaser.Geom.Rectangle.Contains);
-    // Roof
-    this._z(g => g.fillTriangle(46, 278, 344, 278, cx, 148),
-      new Phaser.Geom.Triangle(46, 278, 344, 278, cx, 148), Phaser.Geom.Triangle.Contains);
     // Windows (3 in main cabin)
     this._z(g => {
       g.fillRect(80, 298, 44, 36);
@@ -657,8 +662,11 @@ export default class ColorScene extends Phaser.Scene {
       new Phaser.Geom.Ellipse(cx,406,172,152), Phaser.Geom.Ellipse.Contains);
     this._z(g => g.fillCircle(cx,236,62),
       new Phaser.Geom.Circle(cx,236,62), Phaser.Geom.Circle.Contains);
-    this._z(g => { g.fillCircle(cx-72,239,28); g.fillCircle(cx+72,239,28); },
-      new Phaser.Geom.Rectangle(cx-100,211,200,56), Phaser.Geom.Rectangle.Contains);
+    // Ears as individual circles — a shared rectangle would steal taps from the face
+    this._z(g => g.fillCircle(cx-72,239,28),
+      new Phaser.Geom.Circle(cx-72,239,28), Phaser.Geom.Circle.Contains);
+    this._z(g => g.fillCircle(cx+72,239,28),
+      new Phaser.Geom.Circle(cx+72,239,28), Phaser.Geom.Circle.Contains);
     this._z(g => g.fillEllipse(cx,261,80,66),
       new Phaser.Geom.Ellipse(cx,261,80,66), Phaser.Geom.Ellipse.Contains);
   }
@@ -707,6 +715,9 @@ export default class ColorScene extends Phaser.Scene {
       new Phaser.Geom.Ellipse(cx,403,88,170), Phaser.Geom.Ellipse.Contains);
     this._z(g => g.fillTriangle(cx-14,243,cx+14,243,cx,270),
       new Phaser.Geom.Triangle(cx-14,243,cx+14,243,cx,270), Phaser.Geom.Triangle.Contains);
+    // Feet — drawn in the outline but previously not colorable
+    this._z(g => { g.fillEllipse(cx-30,517,46,20); g.fillEllipse(cx+30,517,46,20); },
+      new Phaser.Geom.Rectangle(cx-53,507,106,20), Phaser.Geom.Rectangle.Contains);
   }
 
   _draw_penguin(g) {
@@ -740,12 +751,17 @@ export default class ColorScene extends Phaser.Scene {
       new Phaser.Geom.Rectangle(cx-58,475,116,28), Phaser.Geom.Rectangle.Contains);
     this._z(g => g.fillEllipse(cx,410,178,160),
       new Phaser.Geom.Ellipse(cx,410,178,160), Phaser.Geom.Ellipse.Contains);
-    this._z(g => { g.fillCircle(cx-62,162,32); g.fillCircle(cx+62,162,32); },
-      new Phaser.Geom.Rectangle(cx-94,130,188,64), Phaser.Geom.Rectangle.Contains);
+    // Ears as individual circles — a shared rectangle would steal taps from the forehead
+    this._z(g => g.fillCircle(cx-62,162,32),
+      new Phaser.Geom.Circle(cx-62,162,32), Phaser.Geom.Circle.Contains);
+    this._z(g => g.fillCircle(cx+62,162,32),
+      new Phaser.Geom.Circle(cx+62,162,32), Phaser.Geom.Circle.Contains);
     this._z(g => g.fillCircle(cx,231,70),
       new Phaser.Geom.Circle(cx,231,70), Phaser.Geom.Circle.Contains);
-    this._z(g => { g.fillCircle(cx-62,162,18); g.fillCircle(cx+62,162,18); },
-      new Phaser.Geom.Rectangle(cx-80,144,160,36), Phaser.Geom.Rectangle.Contains);
+    this._z(g => g.fillCircle(cx-62,162,18),
+      new Phaser.Geom.Circle(cx-62,162,18), Phaser.Geom.Circle.Contains);
+    this._z(g => g.fillCircle(cx+62,162,18),
+      new Phaser.Geom.Circle(cx+62,162,18), Phaser.Geom.Circle.Contains);
     this._z(g => g.fillEllipse(cx,268,76,52),
       new Phaser.Geom.Ellipse(cx,268,76,52), Phaser.Geom.Ellipse.Contains);
   }
@@ -782,6 +798,25 @@ export default class ColorScene extends Phaser.Scene {
 
   _draw_ark(g) {
     const cx = 195, ls = 3.5;
+    // Roof — drawn first so cabin outlines sit on top of it
+    g.lineStyle(ls, 0x000000, 1);
+    g.strokeTriangle(46, 278, 344, 278, cx, 148);
+    g.lineStyle(2, 0x000000, 0.38);
+    for (let i = 1; i <= 4; i++) {
+      const ty = 148 + (278 - 148) * i / 5;
+      const hw = (344 - 46) / 2 * i / 5;
+      if (ty < 198) {
+        g.lineBetween(cx - hw, ty, cx + hw, ty);
+      } else {
+        // Clip plank lines so they don't scribble across the upper cabin
+        if (cx - hw < 102) g.lineBetween(cx - hw, ty, 108, ty);
+        if (cx + hw > 288) g.lineBetween(282, ty, cx + hw, ty);
+      }
+    }
+    // Flag pole + flag
+    g.lineStyle(3, 0x000000, 1);
+    g.lineBetween(cx, 148, cx, 108);
+    g.strokeTriangle(cx, 108, cx + 32, 120, cx, 134);
     // Water
     g.lineStyle(ls, 0x000000, 1);
     g.strokeRect(20, 498, 350, 36);
@@ -823,19 +858,6 @@ export default class ColorScene extends Phaser.Scene {
       { x: 167, y: 228 }, { x: 177, y: 214 }, { x: cx, y: 210 },
       { x: 213, y: 214 }, { x: 223, y: 228 },
     ], false);
-    // Roof
-    g.lineStyle(ls, 0x000000, 1);
-    g.strokeTriangle(46, 278, 344, 278, cx, 148);
-    g.lineStyle(2, 0x000000, 0.38);
-    for (let i = 1; i <= 4; i++) {
-      const ty = 148 + (278 - 148) * i / 5;
-      const hw = (344 - 46) / 2 * i / 5;
-      g.lineBetween(cx - hw, ty, cx + hw, ty);
-    }
-    // Flag pole + flag
-    g.lineStyle(3, 0x000000, 1);
-    g.lineBetween(cx, 148, cx, 108);
-    g.strokeTriangle(cx, 108, cx + 32, 120, cx, 134);
     // Small animal in left window (peeking bunny)
     g.fillStyle(0xffffff, 1);
     g.fillCircle(102, 310, 13);
