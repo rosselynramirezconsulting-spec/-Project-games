@@ -1,4 +1,4 @@
-const GAME_URL = 'https://rosselynramirezconsulting-spec.github.io/-Project-games/';
+const GAME_URL = 'https://rosselynramirezconsulting-spec.github.io/noah/';
 
 // Shares via the native share sheet when available (mobile),
 // falls back to copying the text + link to the clipboard.
