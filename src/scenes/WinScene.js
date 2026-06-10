@@ -1,5 +1,6 @@
 import { addScore } from '../utils/Scores.js';
 import { shareScore } from '../utils/Share.js';
+import { buildCardCanvas, shareCard } from '../utils/ResultCard.js';
 
 export default class WinScene extends Phaser.Scene {
   constructor() { super('Win'); }
@@ -113,24 +114,14 @@ export default class WinScene extends Phaser.Scene {
       duration: 750, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
     });
 
-    // Share button
-    const shareBtn = this.add.rectangle(W / 2, H - 130, 210, 42, 0x1976d2)
+    // Share button — generates a visual score card
+    const shareBtn = this.add.rectangle(W / 2, H - 130, 220, 42, 0x1976d2)
       .setInteractive({ useHandCursor: true }).setDepth(10);
-    this.add.text(W / 2, H - 130, '📤  Share Score', {
-      fontSize: '18px', fontFamily: 'Arial', fontStyle: 'bold',
+    this.add.text(W / 2, H - 130, '📸  Share Score Card', {
+      fontSize: '17px', fontFamily: 'Arial', fontStyle: 'bold',
       fill: '#ffffff', stroke: '#0a3a66', strokeThickness: 3,
     }).setOrigin(0.5).setDepth(11);
-    shareBtn.on('pointerdown', () => {
-      const res = shareScore(
-        `🦁 I rescued ${this.animalsCollected} animals and beat level ${this.level} with ${this.finalScore} pts in Don't Drown, Noah! Can you beat me?`
-      );
-      if (res === 'copied') {
-        const t = this.add.text(W / 2, H - 165, 'Link copied! 📋', {
-          fontSize: '15px', fontFamily: 'Arial', fill: '#aaffaa', stroke: '#222', strokeThickness: 3,
-        }).setOrigin(0.5).setDepth(30);
-        this.tweens.add({ targets: t, y: t.y - 26, alpha: 0, duration: 1400, onComplete: () => t.destroy() });
-      }
-    });
+    shareBtn.on('pointerdown', () => this._showShareCard());
 
     // Menu button
     const menuBtn = this.add.rectangle(W / 2, H - 18, 150, 36, 0x444444)
@@ -139,6 +130,43 @@ export default class WinScene extends Phaser.Scene {
       fontSize: '17px', fontFamily: 'Arial', fill: '#cccccc',
     }).setOrigin(0.5).setDepth(11);
     menuBtn.on('pointerdown', () => this.scene.start('Menu'));
+  }
+
+  _showShareCard() {
+    const W = 390, H = 844;
+    const cv = buildCardCanvas({
+      score: this.finalScore,
+      level: this.level,
+      animalsCollected: this.animalsCollected,
+      won: true,
+    });
+
+    const key = 'winCard';
+    if (this.textures.exists(key)) this.textures.remove(key);
+    this.textures.addCanvas(key, cv);
+
+    const dim   = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.82).setDepth(40).setInteractive();
+    const card  = this.add.image(W / 2, H / 2 - 40, key).setDepth(41).setAlpha(0).setY(H / 2);
+    const hint  = this.add.text(W / 2, H / 2 + 125, '📸  Screenshot this to post on TikTok!', {
+      fontSize: '14px', fontFamily: 'Arial', fill: '#aaffaa', stroke: '#113322', strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(41).setAlpha(0);
+    const close = this.add.text(W / 2, H / 2 + 158, '✕  Close', {
+      fontSize: '18px', fontFamily: 'Arial', fontStyle: 'bold',
+      fill: '#ffffff', stroke: '#222', strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(41).setAlpha(0).setInteractive({ useHandCursor: true });
+
+    const destroy = () => { dim.destroy(); card.destroy(); hint.destroy(); close.destroy(); };
+    close.on('pointerdown', destroy);
+    dim.on('pointerdown', destroy);
+
+    this.tweens.add({ targets: card,  alpha: 1, y: H / 2 - 40, duration: 320, ease: 'Back.easeOut' });
+    this.tweens.add({ targets: [hint, close], alpha: 1, delay: 200, duration: 220 });
+
+    const text = `🦁 I rescued ${this.animalsCollected} animals and beat level ${this.level} with ${this.finalScore} pts in Don't Drown, Noah! Can you beat me?`;
+    shareCard(cv, text).then(result => {
+      if (result === 'copied')     hint.setText('Link copied! 📋  Screenshot the card to post on TikTok!');
+      if (result === 'downloaded') hint.setText('Image saved! 📁  Post it on TikTok with #DontDrownNoah');
+    });
   }
 
   _drawRainbow(cx, cy) {

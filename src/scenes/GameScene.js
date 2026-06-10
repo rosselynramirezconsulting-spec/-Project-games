@@ -534,7 +534,7 @@ export default class GameScene extends Phaser.Scene {
       this.sound.stopMusic();
       this.time.delayedCall(900, () => {
         this.scene.stop('UI');
-        this.scene.start('GameOver', { score: this.score, level: this.level });
+        this.scene.start('GameOver', { score: this.score, level: this.level, animalsCollected: this._animalsCollected });
       });
     } else {
       this._waterPaused = true; // freeze water while respawning

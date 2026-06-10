@@ -1,13 +1,15 @@
 import { addScore, getScores } from '../utils/Scores.js';
 import { shareScore } from '../utils/Share.js';
+import { buildCardCanvas, shareCard } from '../utils/ResultCard.js';
 
 export default class GameOverScene extends Phaser.Scene {
   constructor() { super('GameOver'); }
 
   init(data) {
-    this.finalScore = data.score || 0;
-    this.level      = data.level || 1;
-    this.rank       = addScore(this.finalScore, this.level);
+    this.finalScore       = data.score || 0;
+    this.level            = data.level || 1;
+    this.animalsCollected = data.animalsCollected || 0;
+    this.rank             = addScore(this.finalScore, this.level);
   }
 
   create() {
@@ -97,24 +99,14 @@ export default class GameOverScene extends Phaser.Scene {
     });
     this.tweens.add({ targets: retryBtn, scaleX: 1.05, scaleY: 1.05, duration: 750, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
 
-    // Share button
+    // Share button — generates a visual score card
     const shareBtn = this.add.rectangle(W / 2, H * 0.825, 220, 46, 0x1976d2)
       .setInteractive({ useHandCursor: true });
-    this.add.text(W / 2, H * 0.825, '📤  Share Score', {
-      fontSize: '20px', fontFamily: 'Arial', fontStyle: 'bold',
+    this.add.text(W / 2, H * 0.825, '📸  Share Score Card', {
+      fontSize: '18px', fontFamily: 'Arial', fontStyle: 'bold',
       fill: '#ffffff', stroke: '#0a3a66', strokeThickness: 3,
     }).setOrigin(0.5);
-    shareBtn.on('pointerdown', () => {
-      const res = shareScore(
-        `🌊 I scored ${this.finalScore} pts and reached level ${this.level} in Don't Drown, Noah! Can you beat me?`
-      );
-      if (res === 'copied') {
-        const t = this.add.text(W / 2, H * 0.825 - 40, 'Link copied! 📋', {
-          fontSize: '15px', fontFamily: 'Arial', fill: '#aaffaa', stroke: '#222', strokeThickness: 3,
-        }).setOrigin(0.5).setDepth(30);
-        this.tweens.add({ targets: t, y: t.y - 26, alpha: 0, duration: 1400, onComplete: () => t.destroy() });
-      }
-    });
+    shareBtn.on('pointerdown', () => this._showShareCard());
 
     const menuBtn = this.add.rectangle(W / 2, H * 0.905, 180, 44, 0x334466)
       .setInteractive({ useHandCursor: true });
@@ -122,6 +114,45 @@ export default class GameOverScene extends Phaser.Scene {
       fontSize: '20px', fontFamily: 'Arial', fill: '#aabbcc',
     }).setOrigin(0.5);
     menuBtn.on('pointerdown', () => this.scene.start('Menu'));
+  }
+
+  _showShareCard() {
+    const W = 390, H = 844;
+    const cv = buildCardCanvas({
+      score: this.finalScore,
+      level: this.level,
+      animalsCollected: this.animalsCollected,
+      won: false,
+    });
+
+    const key = 'goCard';
+    if (this.textures.exists(key)) this.textures.remove(key);
+    this.textures.addCanvas(key, cv);
+
+    const dim   = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.82).setDepth(40).setInteractive();
+    const card  = this.add.image(W / 2, H / 2 - 40, key).setDepth(41).setAlpha(0).setY(H / 2);
+    const hint  = this.add.text(W / 2, H / 2 + 125, '📸  Screenshot this to post on TikTok!', {
+      fontSize: '14px', fontFamily: 'Arial', fill: '#aaffaa', stroke: '#113322', strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(41).setAlpha(0);
+    const close = this.add.text(W / 2, H / 2 + 158, '✕  Close', {
+      fontSize: '18px', fontFamily: 'Arial', fontStyle: 'bold',
+      fill: '#ffffff', stroke: '#222', strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(41).setAlpha(0).setInteractive({ useHandCursor: true });
+
+    const destroy = () => { dim.destroy(); card.destroy(); hint.destroy(); close.destroy(); };
+    close.on('pointerdown', destroy);
+    dim.on('pointerdown', destroy);
+
+    // Slide-up entrance
+    this.tweens.add({ targets: card,  alpha: 1, y: H / 2 - 40, duration: 320, ease: 'Back.easeOut' });
+    this.tweens.add({ targets: [hint, close], alpha: 1, delay: 200, duration: 220 });
+
+    // Auto-trigger share sheet
+    const text = `🌊 I scored ${this.finalScore} pts and reached level ${this.level} in Don't Drown, Noah! Can you beat me?`;
+    shareCard(cv, text).then(result => {
+      if (result === 'copied')     hint.setText('Link copied! 📋  Screenshot the card to post on TikTok!');
+      if (result === 'downloaded') hint.setText('Image saved! 📁  Post it on TikTok with #DontDrownNoah');
+    });
   }
 
   _drawLeaderboard(cx, topY, newRank) {
