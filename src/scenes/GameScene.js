@@ -45,6 +45,8 @@ export default class GameScene extends Phaser.Scene {
     this.lives = 3;
     this._won   = false;
     this._dying = false;
+    this._combo       = 0;
+    this._lastCollect = -1e9;
     this.sound = new SoundManager();
   }
 
@@ -84,9 +86,9 @@ export default class GameScene extends Phaser.Scene {
     this.crumblePlatGroup = this.physics.add.staticGroup();
     this.bouncePlatGroup  = this.physics.add.staticGroup();
     this.fallingPlatGroup = this.physics.add.group();
-    this._fallingActive      = []; // platforms currently falling
-    this._ridingFalling      = false;
-    this._currentFallingPlat = null; // the specific platform Noah is attached to
+    this._fallingActive = []; // platforms currently falling
+    this._ridingFalling = false;
+    this._fallJumpUntil = -1000; // grace window after jumping off a falling platform
 
     this._generatePlatforms();
     this._spawnAnimals();
@@ -134,7 +136,6 @@ export default class GameScene extends Phaser.Scene {
       loop: true,
     });
 
-    this._hBand = -1; // altitude color band tracker
     this.sound.startMusic();
     this.events.once('shutdown', () => this.sound.stopMusic(), this);
 
@@ -246,7 +247,6 @@ export default class GameScene extends Phaser.Scene {
           .setDisplaySize(p.w, 18);
         img.setImmovable(true);
         img.body.allowGravity = false;
-        img.body.setSize(p.w, 18, true); // sync body to display size
         img.setTint(0xdd88ff); // purple = falls when stepped on
         img.triggered = false;
         img._fallSpeed = 0;
@@ -305,10 +305,20 @@ export default class GameScene extends Phaser.Scene {
   _onCollectAnimal(noah, animal) {
     const ax = animal.x, ay = animal.y;
     animal.destroy();
-    this.score += 25;
+
+    // Combo: chaining rescues within 4s multiplies the points
+    const now = this.time.now;
+    this._combo = (now - this._lastCollect < 4000) ? this._combo + 1 : 1;
+    this._lastCollect = now;
+    const pts = 25 * this._combo;
+    this.score += pts;
     this._animalsCollected++;
-    this.sound.collect();
-    this._showFloatText(ax, ay - 28, '+25', '#ffe066');
+
+    this.sound.collect(this._combo);
+    const comboCols = ['#ffe066', '#ffb347', '#ff7eb6', '#ff5252', '#e040fb'];
+    const col = comboCols[Math.min(this._combo - 1, comboCols.length - 1)];
+    this._showFloatText(ax, ay - 28, this._combo > 1 ? `+${pts}  x${this._combo} COMBO!` : '+25', col);
+    if (this._combo >= 3) this.cameras.main.shake(90, 0.004);
     this._showCollectEffect(ax, ay);
     this.events.emit('scoreUpdate', this.score);
   }
@@ -361,8 +371,7 @@ export default class GameScene extends Phaser.Scene {
   // ── Falling platform logic ───────────────────────────────────────────
   _onFallingCollide(noah, plat) {
     if (!noah.body.blocked.down) return;
-    this._currentFallingPlat = plat; // always re-attach on contact
-    if (plat.triggered) return;      // shake already running — don't restart it
+    if (plat.triggered) return; // shake already running — don't restart it
     plat.triggered = true;
 
     // Shake sideways for ~450ms, then drop
@@ -413,7 +422,6 @@ export default class GameScene extends Phaser.Scene {
     const W = 390, H = 844, BY = H - 72;
     this._ctrlTop = H - 142;
     this._jumpLastPressed = -1000;
-    this._coyoteFallingEnd = -1000;
 
     // Track active touch IDs per zone using DOM events.
     // More reliable on iOS Safari than Phaser's pointer polling — survives
@@ -532,6 +540,8 @@ export default class GameScene extends Phaser.Scene {
       this._waterPaused = true; // freeze water while respawning
       this.time.delayedCall(600, () => {
         this._dying = false;
+        this._combo = 0;
+        this._lastCollect = -1e9;
         this._jumpLastPressed = -1000;
         this.noah.setPosition(195, WORLD_H - 120);
         this.noah.setVelocity(0, 0);
@@ -604,13 +614,15 @@ export default class GameScene extends Phaser.Scene {
     if (this.cursors.left.isDown  || this.leftHeld)  { noah.setVelocityX(-NOAH_SPEED); noah.setFlipX(true);  }
     else if (this.cursors.right.isDown || this.rightHeld) { noah.setVelocityX(NOAH_SPEED); noah.setFlipX(false); }
 
-    // Falling platform carry — must run before jump check
+    // Falling platform carry — must run before jump check.
+    // Riding is detected geometrically (feet near the surface, within the
+    // platform's width) instead of via collision callbacks, which proved
+    // unreliable for bodies moved by position each frame.
     noah.body.gravity.y = 680;
     this._ridingFalling = false;
     for (let i = this._fallingActive.length - 1; i >= 0; i--) {
       const fp = this._fallingActive[i];
       if (!fp.active) {
-        if (this._currentFallingPlat === fp) this._currentFallingPlat = null;
         this._fallingActive.splice(i, 1);
         continue;
       }
@@ -621,23 +633,23 @@ export default class GameScene extends Phaser.Scene {
       fp.y += dy;
       fp.body.position.y = fp.y - fp.body.halfHeight;
 
-      if (this._currentFallingPlat === fp) {
-        const platLeft  = fp.x - fp.displayWidth  / 2 - 20;
-        const platRight = fp.x + fp.displayWidth  / 2 + 20;
+      const platTop  = fp.body.position.y;
+      const noahFeet = noah.body.position.y + noah.body.height;
+      const onPlatX  = Math.abs(noah.x - fp.x) < fp.displayWidth / 2 + 16;
 
-        if (noah.x < platLeft || noah.x > platRight) {
-          this._currentFallingPlat = null;
-        } else {
-          // Match velocity so physics moves the body (and game object follows).
-          // This lets the jump simply override velocity.y with JUMP_FORCE.
-          noah.body.velocity.y = fp._fallSpeed;
-          noah.body.gravity.y  = 0;
-          this._ridingFalling  = true;
-        }
+      if (time > this._fallJumpUntil &&
+          noah.body.velocity.y >= 0 &&
+          onPlatX &&
+          noahFeet > platTop - 10 && noahFeet < platTop + 36) {
+        // Ride: match the platform's speed plus a small correction that
+        // keeps Noah's feet pinned to the surface without teleporting him.
+        const correction = Phaser.Math.Clamp((platTop - noahFeet) * 12, -120, 120);
+        noah.body.velocity.y = fp._fallSpeed + correction;
+        noah.body.gravity.y  = 0;
+        this._ridingFalling  = true;
       }
 
       if (fp.y > this._waterLevel + 300) {
-        if (this._currentFallingPlat === fp) this._currentFallingPlat = null;
         this._fallingActive.splice(i, 1);
         fp.destroy();
       }
@@ -647,12 +659,29 @@ export default class GameScene extends Phaser.Scene {
     const jumpReady = this.cursors.up.isDown || jTouched || (time - this._jumpLastPressed < 1500);
     if (jumpReady && (noah.body.blocked.down || this._ridingFalling)) {
       noah.setVelocityY(JUMP_FORCE);
-      noah.body.gravity.y      = 680;
-      this._jumpLastPressed    = -1000;
-      this._ridingFalling      = false;
-      this._currentFallingPlat = null; // detach — _fromAbove prevents re-attach until Noah falls back down
-      this.sound.collect();
+      noah.body.gravity.y   = 680;
+      this._jumpLastPressed = -1000;
+      this._ridingFalling   = false;
+      this._fallJumpUntil   = time + 250; // ride logic won't re-grab Noah mid-ascent
+      // Stretch on takeoff
+      if (this._scaleTween) this._scaleTween.stop();
+      noah.setScale(0.82, 1.18);
+      this._scaleTween = this.tweens.add({
+        targets: noah, scaleX: 1, scaleY: 1, duration: 220, ease: 'Quad.easeOut',
+      });
+      this.sound.jump();
     }
+
+    // Squash on landing
+    const grounded = noah.body.blocked.down || this._ridingFalling;
+    if (grounded && this._wasAirborne) {
+      if (this._scaleTween) this._scaleTween.stop();
+      noah.setScale(1.18, 0.84);
+      this._scaleTween = this.tweens.add({
+        targets: noah, scaleX: 1, scaleY: 1, duration: 160, ease: 'Quad.easeOut',
+      });
+    }
+    this._wasAirborne = !grounded;
 
     // Carry player on moving platforms
     if (noah.body.blocked.down) {
@@ -715,15 +744,6 @@ export default class GameScene extends Phaser.Scene {
     // UI updates
     const progress = Phaser.Math.Clamp((WORLD_H - noah.y) / (WORLD_H - ARK_Y), 0, 1);
     this.events.emit('heightUpdate', progress);
-
-    // Background color shifts with altitude: blue → cool blue → gray-blue → icy
-    const hBand = Math.min(3, Math.floor(progress * 4));
-    if (hBand !== this._hBand) {
-      this._hBand = hBand;
-      this.cameras.main.setBackgroundColor(
-        ['#87CEEB', '#5aaec8', '#7a9aaa', '#c0d8e4'][hBand]
-      );
-    }
 
     const waterDist = this._waterLevel - noah.y;
     const danger    = Phaser.Math.Clamp(1 - waterDist / 280, 0, 1);

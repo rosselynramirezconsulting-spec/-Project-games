@@ -1,4 +1,5 @@
 import { addScore } from '../utils/Scores.js';
+import { shareScore } from '../utils/Share.js';
 
 export default class WinScene extends Phaser.Scene {
   constructor() { super('Win'); }
@@ -110,6 +111,25 @@ export default class WinScene extends Phaser.Scene {
     this.tweens.add({
       targets: nextBtn, scaleX: 1.05, scaleY: 1.05,
       duration: 750, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+    });
+
+    // Share button
+    const shareBtn = this.add.rectangle(W / 2, H - 130, 210, 42, 0x1976d2)
+      .setInteractive({ useHandCursor: true }).setDepth(10);
+    this.add.text(W / 2, H - 130, '📤  Share Score', {
+      fontSize: '18px', fontFamily: 'Arial', fontStyle: 'bold',
+      fill: '#ffffff', stroke: '#0a3a66', strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(11);
+    shareBtn.on('pointerdown', () => {
+      const res = shareScore(
+        `🦁 I rescued ${this.animalsCollected} animals and beat level ${this.level} with ${this.finalScore} pts in Noah's Ark Adventure! Can you beat me?`
+      );
+      if (res === 'copied') {
+        const t = this.add.text(W / 2, H - 165, 'Link copied! 📋', {
+          fontSize: '15px', fontFamily: 'Arial', fill: '#aaffaa', stroke: '#222', strokeThickness: 3,
+        }).setOrigin(0.5).setDepth(30);
+        this.tweens.add({ targets: t, y: t.y - 26, alpha: 0, duration: 1400, onComplete: () => t.destroy() });
+      }
     });
 
     // Menu button

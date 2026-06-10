@@ -48,13 +48,20 @@ export default class SoundManager {
     } catch (_) {}
   }
 
-  // Bright happy collect sound
-  collect() {
+  // Bright happy collect sound — pitch rises with the combo multiplier
+  collect(combo = 1) {
+    const m = 1 + 0.12 * Math.min(combo - 1, 6);
     this._melody([
-      [523, 0],
-      [659, 0.1],
-      [784, 0.2],
+      [523 * m, 0],
+      [659 * m, 0.1],
+      [784 * m, 0.2],
     ]);
+  }
+
+  // Soft jump blip
+  jump() {
+    this._beep(290, 0.09, 'triangle', 0.14);
+    this._beep(440, 0.07, 'sine', 0.1);
   }
 
   // Pair matched — cheerful ding-dong

@@ -1,4 +1,5 @@
 import { addScore, getScores } from '../utils/Scores.js';
+import { shareScore } from '../utils/Share.js';
 
 export default class GameOverScene extends Phaser.Scene {
   constructor() { super('GameOver'); }
@@ -71,11 +72,20 @@ export default class GameOverScene extends Phaser.Scene {
     // ── Rankings panel ────────────────────────────────────────────────
     this._drawLeaderboard(W / 2, H * 0.325, this.rank);
 
+    // New record banner
+    if (this.rank === 1 && this.finalScore > 0) {
+      const rec = this.add.text(W / 2, H * 0.243, '🏆 NEW RECORD!', {
+        fontSize: '18px', fontFamily: 'Arial', fontStyle: 'bold',
+        fill: '#ffd700', stroke: '#664400', strokeThickness: 4,
+      }).setOrigin(0.5);
+      this.tweens.add({ targets: rec, scaleX: 1.15, scaleY: 1.15, duration: 420, yoyo: true, repeat: -1 });
+    }
+
     // ── Buttons ───────────────────────────────────────────────────────
-    const retryBtn = this.add.rectangle(W / 2, H * 0.76, 240, 60, 0xcc4400)
+    const retryBtn = this.add.rectangle(W / 2, H * 0.74, 240, 60, 0xcc4400)
       .setInteractive({ useHandCursor: true });
-    const retryHL  = this.add.rectangle(W / 2, H * 0.76 - 10, 228, 20, 0xffffff, 0.14);
-    this.add.text(W / 2, H * 0.76, '↺  Try Again', {
+    const retryHL  = this.add.rectangle(W / 2, H * 0.74 - 10, 228, 20, 0xffffff, 0.14);
+    this.add.text(W / 2, H * 0.74, '↺  Try Again', {
       fontSize: '28px', fontFamily: 'Arial', fontStyle: 'bold',
       fill: '#ffffff', stroke: '#661100', strokeThickness: 4,
     }).setOrigin(0.5);
@@ -87,9 +97,28 @@ export default class GameOverScene extends Phaser.Scene {
     });
     this.tweens.add({ targets: retryBtn, scaleX: 1.05, scaleY: 1.05, duration: 750, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
 
-    const menuBtn = this.add.rectangle(W / 2, H * 0.875, 180, 44, 0x334466)
+    // Share button
+    const shareBtn = this.add.rectangle(W / 2, H * 0.825, 220, 46, 0x1976d2)
       .setInteractive({ useHandCursor: true });
-    this.add.text(W / 2, H * 0.875, 'Main Menu', {
+    this.add.text(W / 2, H * 0.825, '📤  Share Score', {
+      fontSize: '20px', fontFamily: 'Arial', fontStyle: 'bold',
+      fill: '#ffffff', stroke: '#0a3a66', strokeThickness: 3,
+    }).setOrigin(0.5);
+    shareBtn.on('pointerdown', () => {
+      const res = shareScore(
+        `🌊 I scored ${this.finalScore} pts and reached level ${this.level} in Noah's Ark Adventure! Can you beat me?`
+      );
+      if (res === 'copied') {
+        const t = this.add.text(W / 2, H * 0.825 - 40, 'Link copied! 📋', {
+          fontSize: '15px', fontFamily: 'Arial', fill: '#aaffaa', stroke: '#222', strokeThickness: 3,
+        }).setOrigin(0.5).setDepth(30);
+        this.tweens.add({ targets: t, y: t.y - 26, alpha: 0, duration: 1400, onComplete: () => t.destroy() });
+      }
+    });
+
+    const menuBtn = this.add.rectangle(W / 2, H * 0.905, 180, 44, 0x334466)
+      .setInteractive({ useHandCursor: true });
+    this.add.text(W / 2, H * 0.905, 'Main Menu', {
       fontSize: '20px', fontFamily: 'Arial', fill: '#aabbcc',
     }).setOrigin(0.5);
     menuBtn.on('pointerdown', () => this.scene.start('Menu'));
