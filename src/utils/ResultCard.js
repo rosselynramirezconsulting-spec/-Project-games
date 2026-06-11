@@ -1,4 +1,4 @@
-const GAME_URL = 'https://rosselynramirezconsulting-spec.github.io/noah/';
+const GAME_URL = 'https://glitchrushgg.github.io/noah/';
 
 function loadImg(src) {
   return new Promise((resolve) => {
