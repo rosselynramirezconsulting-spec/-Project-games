@@ -1,268 +1,303 @@
 import SoundManager from '../utils/SoundManager.js';
 
-// sceneParts use absolute screen coordinates (s=1, ox=0, oy=0).
-// Animal parts use per-page s/ox/oy transform.
-// Parchment: x 15–375, y 77–539.
-// Animal zone (s=8, ox=35, oy=145): y 145–465, x 35–355.
-// Sky strip: y 77–145.  Ground strip: y 465–539.
+// sceneParts  → absolute screen coords (s=1, ox=0, oy=0)
+// parts       → animal coord space via s/ox/oy
+// Parchment area: x 15–375, y 77–539
+// Animal zone (s=8, ox=35, oy=145): y 145–465, x 35–355
+// Sky strip y 77–145 · Ground strip y 465–539
+// 'poly' shape: ['poly', [[x1,y1],[x2,y2],...]]  — filled/stroked polygon
 
 const PAGES = {
+
+  // ── Noah ───────────────────────────────────────────────────────────────
   noah: {
     s: 6, ox: 66, oy: 127, tex: 'noah', label: 'Noah',
     sceneParts: [
-      { shapes: [['rect', 15, 77, 360, 50]] },             // sky
-      { shapes: [['circle', 330, 99, 18]] },               // sun
-      { shapes: [['rect', 15, 511, 360, 28]] },            // ground
+      { shapes: [['rect', 15, 77, 360, 50]] },      // sky
+      { shapes: [['circle', 330, 99, 18]] },         // sun
+      { shapes: [['rect', 15, 511, 360, 28]] },      // ground
     ],
     parts: [
-      { shapes: [['rect', 14, 28, 20, 26]] },
-      { shapes: [['rect', 10, 30, 28, 24], ['tri', 10, 54, 38, 54, 24, 64]] },
-      { shapes: [['circle', 24, 18, 14]] },
-      { shapes: [['tri', 16, 26, 32, 26, 24, 38]] },
-      { shapes: [['rect', 12, 6, 24, 10], ['rect', 10, 4, 28, 8]] },
-      { shapes: [['rect', 37, 20, 5, 44]] },
+      { shapes: [['rect', 37, 20, 5, 44]] },         // staff
+      { shapes: [['poly', [[9,30],[36,30],[38,64],[7,64]]]] },  // robe (trapezoid)
+      { shapes: [['circle', 24, 18, 13]] },          // head
+      { shapes: [['poly', [[14,26],[34,26],[30,40],[24,44],[18,40]]]] }, // beard
+      { shapes: [['rect', 8, 10, 32, 8], ['rect', 11, 6, 26, 6]] },     // hood/hat
     ],
     details(g, T, Y, s) {
-      g.fillStyle(0x000000, 1);
-      g.fillCircle(T(20), Y(16), 2 * s);
-      g.fillCircle(T(28), Y(16), 2 * s);
-      g.lineStyle(5, 0x000000, 1);
-      g.strokePoints([{ x: T(20), y: Y(22) }, { x: T(24), y: Y(25) }, { x: T(28), y: Y(22) }], false);
+      g.fillStyle(0x222222, 1);
+      g.fillCircle(T(20), Y(16), 2.5 * s);
+      g.fillCircle(T(28), Y(16), 2.5 * s);
+      g.lineStyle(4, 0x222222, 1);
+      g.strokePoints([{ x: T(20), y: Y(21) }, { x: T(24), y: Y(24) }, { x: T(28), y: Y(21) }], false);
     },
   },
 
+  // ── Elephant ───────────────────────────────────────────────────────────
   elephant: {
     s: 8, ox: 35, oy: 145, tex: 'elephant', label: 'Elephant',
     sceneParts: [
-      { shapes: [['rect', 15, 77, 360, 68]] },             // savanna sky
-      { shapes: [['circle', 330, 104, 20]] },              // sun
-      { shapes: [['rect', 307, 92, 14, 153]] },            // acacia trunk
-      { shapes: [['ellipse', 314, 108, 90, 32]] },         // acacia flat canopy
-      { shapes: [['rect', 15, 465, 360, 74]] },            // savanna ground
-      { shapes: [['ellipse', 102, 492, 82, 22]] },         // water puddle
+      { shapes: [['rect', 15, 77, 360, 68]] },
+      { shapes: [['circle', 330, 104, 20]] },
+      { shapes: [['rect', 307, 92, 14, 153]] },
+      { shapes: [['ellipse', 314, 108, 90, 32]] },
+      { shapes: [['rect', 15, 465, 360, 74]] },
+      { shapes: [['ellipse', 102, 492, 82, 22]] },
     ],
     parts: [
-      { shapes: [['circle', 20, 20, 14]] },                // body
-      { shapes: [['circle', 20, 8, 9]] },                  // head
-      { shapes: [['ellipse', 10, 6, 8, 10]] },             // ear
-      { shapes: [['rect', 12, 14, 4, 14]] },               // trunk
-      { shapes: [['rect', 33, 18, 3, 10]] },               // tail
-      { shapes: [['rect', 8, 30, 5, 10], ['rect', 14, 30, 5, 10],
-                 ['rect', 22, 30, 5, 10], ['rect', 28, 30, 5, 10]] }, // 4 legs
-    ],
-    details(g, T, Y, s) {
-      g.fillStyle(0x000000, 1);
-      g.fillCircle(T(17), Y(8), 2 * s);
-    },
-  },
-
-  giraffe: {
-    s: 8, ox: 35, oy: 145, tex: 'giraffe', label: 'Giraffe',
-    sceneParts: [
-      { shapes: [['rect', 15, 77, 360, 68]] },             // sky
-      { shapes: [['circle', 55, 104, 20]] },               // sun (left)
-      { shapes: [['rect', 318, 82, 14, 185]] },            // tall tree trunk
-      { shapes: [['circle', 325, 100, 44]] },              // tree canopy
-      { shapes: [['rect', 15, 465, 360, 74]] },            // ground
-      { shapes: [['rect', 15, 454, 360, 13]] },            // grass strip
-    ],
-    parts: [
-      { shapes: [['rect', 10, 20, 20, 18]] },              // body
-      { shapes: [['rect', 17, 4, 7, 20]] },                // neck
-      { shapes: [['rect', 20, 0, 12, 8]] },                // head
-      { shapes: [['rect', 22, -1, 3, 5], ['rect', 28, -1, 3, 5]] }, // ossicones
-      { shapes: [['rect', 12, 22, 5, 5], ['rect', 22, 26, 5, 5], ['rect', 13, 30, 5, 5]] }, // spots
-      { shapes: [['rect', 11, 37, 4, 12], ['rect', 17, 37, 4, 12],
-                 ['rect', 23, 37, 4, 12], ['rect', 29, 37, 4, 12]] }, // 4 legs
-      { shapes: [['rect', 29, 23, 2, 10]] },               // tail
-    ],
-    details(g, T, Y, s) {
-      g.fillStyle(0x000000, 1);
-      g.fillCircle(T(24), Y(4), 2 * s);
-    },
-  },
-
-  lion: {
-    s: 8, ox: 35, oy: 145, tex: 'lion', label: 'Lion',
-    sceneParts: [
-      { shapes: [['rect', 15, 77, 360, 68]] },             // sunset sky
-      { shapes: [['rect', 15, 454, 360, 13]] },            // grass strip
-      { shapes: [['circle', 55, 468, 28]] },               // rock left
-      { shapes: [['circle', 335, 468, 24]] },              // rock right
-      { shapes: [['rect', 15, 465, 360, 74]] },            // ground
-    ],
-    parts: [
-      { shapes: [['circle', 20, 20, 18]] },                // mane
-      { shapes: [['ellipse', 20, 33, 22, 16]] },           // body
-      { shapes: [['circle', 20, 20, 13]] },                // face
-      { shapes: [['circle', 20, 22, 4]] },                 // nose
-      { shapes: [['rect', 37, 24, 4, 14]] },               // tail
-      { shapes: [['circle', 39, 38, 6]] },                 // tail tuft
-      { shapes: [['ellipse', 12, 38, 10, 6], ['ellipse', 28, 38, 10, 6]] }, // paws
-    ],
-    details(g, T, Y, s) {
-      g.fillStyle(0x000000, 1);
-      g.fillCircle(T(16), Y(17), 2 * s);
-      g.fillCircle(T(24), Y(17), 2 * s);
-    },
-  },
-
-  zebra: {
-    s: 8, ox: 35, oy: 145, tex: 'zebra', label: 'Zebra',
-    sceneParts: [
-      { shapes: [['rect', 15, 77, 360, 68]] },             // sky
-      { shapes: [['tri', 15, 145, 120, 77, 225, 145]] },   // mountain left
-      { shapes: [['tri', 165, 145, 270, 77, 375, 145]] },  // mountain right
-      { shapes: [['rect', 15, 454, 52, 18], ['rect', 78, 449, 42, 23],
-                 ['rect', 298, 451, 47, 21], ['rect', 338, 455, 37, 17]] }, // tall grass
-      { shapes: [['rect', 15, 465, 360, 74]] },            // ground
-    ],
-    parts: [
-      { shapes: [['rect', 8, 14, 24, 20], ['circle', 20, 10, 9]] }, // body + head
-      { shapes: [
-        ['rect', 10, 16, 3, 16], ['rect', 16, 14, 3, 18],
-        ['rect', 22, 14, 3, 18], ['rect', 28, 16, 3, 16],
-      ] },                                                 // stripes
-      { shapes: [['rect', 18, 2, 4, 14]] },                // mane
-      { shapes: [['rect', 9, 33, 4, 10], ['rect', 15, 33, 4, 10],
-                 ['rect', 22, 33, 4, 10], ['rect', 28, 33, 4, 10]] }, // 4 legs
-      { shapes: [['rect', 31, 17, 2, 10], ['circle', 31, 27, 4]] }, // tail + tuft
-    ],
-    details(g, T, Y, s) {
-      g.fillStyle(0x000000, 1);
-      g.fillCircle(T(17), Y(10), 2 * s);
-      g.fillCircle(T(23), Y(10), 2 * s);
-    },
-  },
-
-  monkey: {
-    s: 8, ox: 35, oy: 145, tex: 'monkey', label: 'Monkey',
-    sceneParts: [
-      { shapes: [['rect', 15, 77, 360, 68]] },             // jungle sky
-      { shapes: [['rect', 15, 90, 26, 385]] },             // left trunk
-      { shapes: [['circle', 28, 110, 36], ['circle', 28, 200, 28], ['circle', 28, 290, 24]] }, // left leaves
-      { shapes: [['rect', 349, 90, 26, 385]] },            // right trunk
-      { shapes: [['circle', 362, 110, 36], ['circle', 362, 200, 28], ['circle', 362, 290, 24]] }, // right leaves
-      { shapes: [['rect', 40, 212, 310, 12]] },            // branch
-      { shapes: [['rect', 15, 465, 360, 74]] },            // jungle floor
-    ],
-    parts: [
-      { shapes: [['circle', 20, 18, 13]] },                // head
-      { shapes: [['ellipse', 20, 30, 16, 14]] },           // body
-      { shapes: [['rect', 5, 24, 8, 5], ['rect', 27, 24, 8, 5]] }, // arms
-      { shapes: [
-        ['ellipse', 20, 22, 12, 10], ['circle', 8, 16, 6],
-        ['circle', 32, 16, 6], ['ellipse', 20, 25, 8, 5],
-      ] },                                                 // face + ears + mouth
-      { shapes: [['rect', 29, 30, 3, 12]] },               // tail
-    ],
-    details(g, T, Y, s) {
-      g.fillStyle(0x000000, 1);
-      g.fillCircle(T(17), Y(18), 2 * s);
-      g.fillCircle(T(23), Y(18), 2 * s);
-    },
-  },
-
-  rabbit: {
-    s: 8, ox: 35, oy: 145, tex: 'rabbit', label: 'Rabbit',
-    sceneParts: [
-      { shapes: [['rect', 15, 77, 360, 68]] },             // meadow sky
-      { shapes: [['circle', 330, 104, 20]] },              // sun
-      { shapes: [['rect', 15, 465, 360, 74]] },            // meadow ground
-      { shapes: [['circle', 58, 483, 16], ['circle', 92, 476, 12]] },   // flowers left
-      { shapes: [['circle', 293, 480, 14], ['circle', 335, 477, 16]] }, // flowers right
-      { shapes: [['tri', 252, 462, 272, 462, 262, 480]] }, // carrot
-    ],
-    parts: [
-      { shapes: [
-        ['circle', 20, 24, 13], ['circle', 20, 12, 9],
-        ['rect', 14, 0, 6, 14], ['rect', 22, 0, 6, 14],
-      ] },                                                 // body + head + ears
-      { shapes: [['rect', 15, 1, 4, 11], ['rect', 23, 1, 4, 11]] }, // inner ears
-      { shapes: [['circle', 20, 17, 2]] },                 // nose
-      { shapes: [['ellipse', 14, 36, 14, 8], ['ellipse', 26, 36, 14, 8]] }, // feet
-      { shapes: [['circle', 30, 26, 5]] },                 // tail
-    ],
-    details(g, T, Y, s) {
-      g.fillStyle(0x000000, 1);
-      g.fillCircle(T(17), Y(12), 2 * s);
-      g.fillCircle(T(23), Y(12), 2 * s);
-    },
-  },
-
-  penguin: {
-    s: 8, ox: 35, oy: 145, tex: 'penguin', label: 'Penguin',
-    sceneParts: [
-      { shapes: [['rect', 15, 77, 360, 68]] },             // arctic sky
-      { shapes: [['tri', 15, 145, 80, 77, 145, 145]] },    // iceberg left
-      { shapes: [['tri', 230, 145, 295, 80, 360, 145]] },  // iceberg right
-      { shapes: [['rect', 15, 453, 55, 50], ['rect', 310, 450, 55, 54]] }, // ice blocks
-      { shapes: [['rect', 15, 465, 360, 40]] },            // ice ground
-      { shapes: [['rect', 15, 500, 360, 39]] },            // ocean
-    ],
-    parts: [
-      { shapes: [['ellipse', 20, 22, 22, 28]] },           // body
-      { shapes: [['ellipse', 8, 22, 8, 18], ['ellipse', 32, 22, 8, 18]] }, // flippers
-      { shapes: [['ellipse', 20, 24, 14, 20]] },           // belly
-      { shapes: [['circle', 20, 10, 9]] },                 // head
-      { shapes: [['tri', 17, 14, 23, 14, 20, 19]] },       // beak
+      { shapes: [['ellipse', 20, 28, 24, 20]] },                    // body (wide oval)
+      { shapes: [['ellipse', 8, 14, 10, 17]] },                     // left ear
+      { shapes: [['ellipse', 32, 14, 10, 17]] },                    // right ear
+      { shapes: [['circle', 20, 14, 12]] },                         // head
+      { shapes: [['rect', 17, 23, 6, 14], ['ellipse', 20, 37, 10, 6]] }, // trunk + tip
+      { shapes: [['rect', 8, 35, 6, 9], ['rect', 15, 35, 6, 9],
+                 ['rect', 22, 35, 6, 9], ['rect', 30, 35, 6, 9]] }, // 4 legs
     ],
     details(g, T, Y, s) {
       g.fillStyle(0xffffff, 1);
-      g.fillCircle(T(17), Y(10), 3 * s);
-      g.fillCircle(T(23), Y(10), 3 * s);
-      g.lineStyle(3, 0x000000, 1);
-      g.strokeCircle(T(17), Y(10), 3 * s);
-      g.strokeCircle(T(23), Y(10), 3 * s);
-      g.fillStyle(0x000000, 1);
-      g.fillCircle(T(17), Y(10), 2 * s);
-      g.fillCircle(T(23), Y(10), 2 * s);
+      g.fillCircle(T(16), Y(12), 3 * s);
+      g.fillCircle(T(24), Y(12), 3 * s);
+      g.fillStyle(0x222222, 1);
+      g.fillCircle(T(16), Y(12), 2 * s);
+      g.fillCircle(T(24), Y(12), 2 * s);
+      g.fillStyle(0xfffacd, 1);
+      g.fillTriangle(T(15), Y(22), T(18), Y(22), T(14), Y(27));
+      g.fillTriangle(T(22), Y(22), T(25), Y(22), T(26), Y(27));
     },
   },
 
+  // ── Giraffe ────────────────────────────────────────────────────────────
+  giraffe: {
+    s: 8, ox: 35, oy: 145, tex: 'giraffe', label: 'Giraffe',
+    sceneParts: [
+      { shapes: [['rect', 15, 77, 360, 68]] },
+      { shapes: [['circle', 55, 104, 20]] },
+      { shapes: [['rect', 318, 82, 14, 185]] },
+      { shapes: [['circle', 325, 100, 44]] },
+      { shapes: [['rect', 15, 465, 360, 74]] },
+      { shapes: [['rect', 15, 454, 360, 13]] },
+    ],
+    parts: [
+      { shapes: [['ellipse', 20, 38, 22, 15]] },                    // body
+      { shapes: [['poly', [[15,14],[25,14],[27,38],[13,38]]]] },     // neck (tapering)
+      { shapes: [['ellipse', 20, 9, 14, 9]] },                      // head
+      { shapes: [['rect', 15, 2, 3, 8], ['rect', 22, 2, 3, 8]] },   // ossicones
+      { shapes: [['rect', 12, 26, 5, 5], ['rect', 20, 30, 5, 5],
+                 ['rect', 15, 19, 5, 5], ['rect', 24, 22, 5, 5]] }, // spots
+      { shapes: [['rect', 10, 41, 5, 7], ['rect', 16, 41, 5, 7],
+                 ['rect', 25, 41, 5, 7], ['rect', 31, 41, 5, 7]] }, // 4 legs
+    ],
+    details(g, T, Y, s) {
+      g.fillStyle(0x222222, 1);
+      g.fillCircle(T(16), Y(7), 2 * s);
+      g.fillCircle(T(24), Y(7), 2 * s);
+      g.lineStyle(3, 0x222222, 1);
+      g.strokePoints([{ x: T(16), y: Y(11) }, { x: T(20), y: Y(13) }, { x: T(24), y: Y(11) }], false);
+    },
+  },
+
+  // ── Lion ───────────────────────────────────────────────────────────────
+  lion: {
+    s: 8, ox: 35, oy: 145, tex: 'lion', label: 'Lion',
+    sceneParts: [
+      { shapes: [['rect', 15, 77, 360, 68]] },
+      { shapes: [['rect', 15, 454, 360, 13]] },
+      { shapes: [['circle', 55, 468, 28]] },
+      { shapes: [['circle', 335, 468, 24]] },
+      { shapes: [['rect', 15, 465, 360, 74]] },
+    ],
+    parts: [
+      { shapes: [['ellipse', 20, 36, 20, 13]] },                    // body
+      { shapes: [['poly', [[32,28],[38,28],[40,36],[38,44],[35,45]]]] }, // tail
+      { shapes: [['circle', 38, 41, 6]] },                          // tail tuft
+      { shapes: [['circle', 20, 22, 17]] },                         // mane
+      { shapes: [['circle', 20, 22, 12]] },                         // face
+      { shapes: [['ellipse', 20, 27, 10, 7]] },                     // muzzle
+      { shapes: [['ellipse', 10, 38, 9, 6], ['ellipse', 30, 38, 9, 6]] }, // paws
+    ],
+    details(g, T, Y, s) {
+      g.fillStyle(0x222222, 1);
+      g.fillCircle(T(16), Y(19), 2 * s);
+      g.fillCircle(T(24), Y(19), 2 * s);
+      g.fillCircle(T(20), Y(24), 2.5 * s);
+      g.lineStyle(3, 0x222222, 1);
+      g.lineBetween(T(20), Y(24), T(16), Y(26));
+      g.lineBetween(T(20), Y(24), T(24), Y(26));
+    },
+  },
+
+  // ── Zebra ──────────────────────────────────────────────────────────────
+  zebra: {
+    s: 8, ox: 35, oy: 145, tex: 'zebra', label: 'Zebra',
+    sceneParts: [
+      { shapes: [['rect', 15, 77, 360, 68]] },
+      { shapes: [['tri', 15, 145, 120, 77, 225, 145]] },
+      { shapes: [['tri', 165, 145, 270, 77, 375, 145]] },
+      { shapes: [['rect', 15, 454, 52, 18], ['rect', 78, 449, 42, 23],
+                 ['rect', 298, 451, 47, 21], ['rect', 338, 455, 37, 17]] },
+      { shapes: [['rect', 15, 465, 360, 74]] },
+    ],
+    parts: [
+      { shapes: [['ellipse', 20, 27, 24, 18]] },                    // white body
+      { shapes: [['poly', [[14,12],[26,12],[28,26],[12,26]]]] },     // neck
+      { shapes: [['ellipse', 20, 8, 14, 10]] },                     // head
+      { shapes: [['tri', 14,3,18,-1,21,3], ['tri', 19,3,23,-1,26,3]] }, // pointed ears
+      { shapes: [['rect', 17, 2, 5, 18]] },                         // mane
+      { shapes: [
+        ['rect', 9, 18, 22, 3], ['rect', 11, 23, 20, 3],
+        ['rect', 10, 28, 22, 3], ['rect', 12, 34, 18, 3],
+        ['rect', 15, 12, 10, 3], ['rect', 15, 7, 10, 3],
+      ] },                                                           // stripes
+      { shapes: [['rect', 9, 36, 5, 8], ['rect', 15, 36, 5, 8],
+                 ['rect', 22, 36, 5, 8], ['rect', 28, 36, 5, 8]] }, // 4 legs
+    ],
+    details(g, T, Y, s) {
+      g.fillStyle(0x111111, 1);
+      g.fillCircle(T(16), Y(7), 2 * s);
+      g.fillCircle(T(24), Y(7), 2 * s);
+      g.fillCircle(T(20), Y(11), 2 * s);
+    },
+  },
+
+  // ── Monkey ─────────────────────────────────────────────────────────────
+  monkey: {
+    s: 8, ox: 35, oy: 145, tex: 'monkey', label: 'Monkey',
+    sceneParts: [
+      { shapes: [['rect', 15, 77, 360, 68]] },
+      { shapes: [['rect', 15, 90, 26, 385]] },
+      { shapes: [['circle', 28, 110, 36], ['circle', 28, 200, 28], ['circle', 28, 290, 24]] },
+      { shapes: [['rect', 349, 90, 26, 385]] },
+      { shapes: [['circle', 362, 110, 36], ['circle', 362, 200, 28], ['circle', 362, 290, 24]] },
+      { shapes: [['rect', 40, 212, 310, 12]] },
+      { shapes: [['rect', 15, 465, 360, 74]] },
+    ],
+    parts: [
+      { shapes: [['circle', 20, 18, 13]] },                         // head
+      { shapes: [['ellipse', 20, 32, 16, 14]] },                    // body
+      { shapes: [['circle', 6, 17, 6], ['circle', 34, 17, 6]] },    // ears
+      { shapes: [['poly', [[4,24],[10,24],[8,36],[2,36]]]] },        // left arm
+      { shapes: [['poly', [[30,24],[36,24],[38,36],[32,36]]]] },     // right arm
+      { shapes: [['ellipse', 20, 22, 13, 10]] },                    // face skin
+      { shapes: [['ellipse', 20, 26, 9, 6]] },                      // muzzle
+      { shapes: [['poly', [[26,34],[30,34],[33,42],[28,45]]]] },     // tail
+    ],
+    details(g, T, Y, s) {
+      g.fillStyle(0x222222, 1);
+      g.fillCircle(T(16), Y(18), 2 * s);
+      g.fillCircle(T(24), Y(18), 2 * s);
+      g.fillCircle(T(20), Y(25), 2 * s);
+      g.lineStyle(3, 0x222222, 1);
+      g.strokePoints([{ x: T(16), y: Y(28) }, { x: T(20), y: Y(30) }, { x: T(24), y: Y(28) }], false);
+    },
+  },
+
+  // ── Rabbit ─────────────────────────────────────────────────────────────
+  rabbit: {
+    s: 8, ox: 35, oy: 145, tex: 'rabbit', label: 'Rabbit',
+    sceneParts: [
+      { shapes: [['rect', 15, 77, 360, 68]] },
+      { shapes: [['circle', 330, 104, 20]] },
+      { shapes: [['rect', 15, 465, 360, 74]] },
+      { shapes: [['circle', 58, 483, 16], ['circle', 92, 476, 12]] },
+      { shapes: [['circle', 293, 480, 14], ['circle', 335, 477, 16]] },
+      { shapes: [['tri', 252, 462, 272, 462, 262, 480]] },
+    ],
+    parts: [
+      { shapes: [['ellipse', 20, 30, 20, 22]] },                    // body
+      { shapes: [['circle', 20, 16, 12]] },                         // head
+      { shapes: [['rect', 12, -3, 8, 20], ['rect', 21, -3, 8, 20]] }, // tall ears
+      { shapes: [['rect', 13, -2, 6, 17], ['rect', 22, -2, 6, 17]] }, // inner ear (lighter)
+      { shapes: [['circle', 20, 20, 3]] },                          // nose
+      { shapes: [['ellipse', 12, 39, 12, 7], ['ellipse', 28, 39, 12, 7]] }, // feet
+      { shapes: [['circle', 31, 28, 5]] },                          // tail
+    ],
+    details(g, T, Y, s) {
+      g.fillStyle(0x222222, 1);
+      g.fillCircle(T(16), Y(15), 2 * s);
+      g.fillCircle(T(24), Y(15), 2 * s);
+      g.lineStyle(3, 0x222222, 1);
+      g.lineBetween(T(16), Y(20), T(12), Y(22));
+      g.lineBetween(T(16), Y(20), T(12), Y(19));
+      g.lineBetween(T(24), Y(20), T(28), Y(22));
+      g.lineBetween(T(24), Y(20), T(28), Y(19));
+    },
+  },
+
+  // ── Penguin ────────────────────────────────────────────────────────────
+  penguin: {
+    s: 8, ox: 35, oy: 145, tex: 'penguin', label: 'Penguin',
+    sceneParts: [
+      { shapes: [['rect', 15, 77, 360, 68]] },
+      { shapes: [['tri', 15, 145, 80, 77, 145, 145]] },
+      { shapes: [['tri', 230, 145, 295, 80, 360, 145]] },
+      { shapes: [['rect', 15, 453, 55, 50], ['rect', 310, 450, 55, 54]] },
+      { shapes: [['rect', 15, 465, 360, 40]] },
+      { shapes: [['rect', 15, 500, 360, 39]] },
+    ],
+    parts: [
+      { shapes: [['ellipse', 20, 26, 20, 26]] },                    // body (black)
+      { shapes: [['ellipse', 8, 26, 8, 18], ['ellipse', 32, 26, 8, 18]] }, // flippers
+      { shapes: [['ellipse', 20, 28, 13, 21]] },                    // white belly
+      { shapes: [['circle', 20, 11, 10]] },                         // head
+      { shapes: [['tri', 17, 15, 23, 15, 20, 20]] },                // beak
+      { shapes: [['ellipse', 13, 41, 10, 6], ['ellipse', 27, 41, 10, 6]] }, // feet
+    ],
+    details(g, T, Y, s) {
+      g.fillStyle(0xffffff, 1);
+      g.fillCircle(T(16), Y(10), 3 * s);
+      g.fillCircle(T(24), Y(10), 3 * s);
+      g.fillStyle(0x222222, 1);
+      g.fillCircle(T(16), Y(10), 2 * s);
+      g.fillCircle(T(24), Y(10), 2 * s);
+    },
+  },
+
+  // ── Bear ───────────────────────────────────────────────────────────────
   bear: {
     s: 8, ox: 35, oy: 145, tex: 'bear', label: 'Bear',
     sceneParts: [
-      { shapes: [['rect', 15, 77, 360, 68]] },             // forest sky
-      { shapes: [['tri', 15, 145, 55, 77, 95, 145], ['rect', 47, 138, 16, 28]] }, // left pine
-      { shapes: [['tri', 280, 145, 320, 77, 360, 145], ['rect', 312, 138, 16, 28]] }, // right pine
-      { shapes: [['rect', 15, 465, 360, 74]] },            // forest floor
-      { shapes: [['circle', 52, 478, 9], ['circle', 72, 472, 9], ['circle', 62, 488, 8]] }, // berries L
-      { shapes: [['circle', 300, 476, 9], ['circle', 322, 481, 9]] },                       // berries R
+      { shapes: [['rect', 15, 77, 360, 68]] },
+      { shapes: [['tri', 15, 145, 55, 77, 95, 145], ['rect', 47, 138, 16, 28]] },
+      { shapes: [['tri', 280, 145, 320, 77, 360, 145], ['rect', 312, 138, 16, 28]] },
+      { shapes: [['rect', 15, 465, 360, 74]] },
+      { shapes: [['circle', 52, 478, 9], ['circle', 72, 472, 9], ['circle', 62, 488, 8]] },
+      { shapes: [['circle', 300, 476, 9], ['circle', 322, 481, 9]] },
     ],
     parts: [
-      { shapes: [
-        ['circle', 20, 22, 15], ['circle', 20, 10, 10],
-        ['circle', 10, 6, 7], ['circle', 30, 6, 7],
-      ] },                                                 // body + head + ears
-      { shapes: [['ellipse', 6, 24, 10, 18], ['ellipse', 34, 24, 10, 18]] }, // arms
-      { shapes: [['ellipse', 20, 24, 10, 8]] },            // muzzle
-      { shapes: [['ellipse', 13, 36, 12, 8], ['ellipse', 27, 36, 12, 8]] }, // hind paws
+      { shapes: [['circle', 20, 30, 16]] },                         // body
+      { shapes: [['circle', 20, 14, 12]] },                         // head
+      { shapes: [['circle', 9, 5, 7], ['circle', 31, 5, 7]] },      // ears
+      { shapes: [['ellipse', 4, 28, 9, 18], ['ellipse', 36, 28, 9, 18]] }, // arms
+      { shapes: [['ellipse', 20, 18, 11, 8]] },                     // muzzle
+      { shapes: [['ellipse', 12, 42, 11, 7], ['ellipse', 28, 42, 11, 7]] }, // paws
     ],
     details(g, T, Y, s) {
-      g.fillStyle(0x000000, 1);
-      g.fillCircle(T(17), Y(10), 2 * s);
-      g.fillCircle(T(23), Y(10), 2 * s);
-      g.fillCircle(T(20), Y(14), 2 * s);
+      g.fillStyle(0x222222, 1);
+      g.fillCircle(T(16), Y(12), 2 * s);
+      g.fillCircle(T(24), Y(12), 2 * s);
+      g.fillCircle(T(20), Y(17), 2.5 * s);
+      g.lineStyle(3, 0x222222, 1);
+      g.strokePoints([{ x: T(16), y: Y(21) }, { x: T(20), y: Y(23) }, { x: T(24), y: Y(21) }], false);
     },
   },
 
+  // ── Ark ────────────────────────────────────────────────────────────────
   ark: {
     s: 3, ox: 15, oy: 158, tex: 'ark', label: 'The Ark',
     sceneParts: [
-      { shapes: [['rect', 15, 77, 360, 81]] },             // sky
-      { shapes: [['circle', 330, 110, 24]] },              // sun
-      { shapes: [['ellipse', 80, 106, 70, 26], ['ellipse', 240, 94, 80, 28]] }, // clouds
-      { shapes: [['rect', 15, 458, 360, 81]] },            // ocean
+      { shapes: [['rect', 15, 77, 360, 81]] },
+      { shapes: [['circle', 330, 110, 24]] },
+      { shapes: [['ellipse', 80, 106, 70, 26], ['ellipse', 240, 94, 80, 28]] },
+      { shapes: [['rect', 15, 458, 360, 81]] },
     ],
     parts: [
-      { shapes: [['rect', 0, 50, 120, 50]] },              // hull
-      { shapes: [['rect', 5, 55, 110, 40]] },              // hull planking
-      { shapes: [['rect', 20, 20, 80, 35], ['rect', 35, 5, 50, 20]] }, // cabin
-      { shapes: [['tri', 15, 20, 105, 20, 60, 2]] },       // roof
+      { shapes: [['rect', 0, 50, 120, 50]] },
+      { shapes: [['rect', 5, 55, 110, 40]] },
+      { shapes: [['rect', 20, 20, 80, 35], ['rect', 35, 5, 50, 20]] },
+      { shapes: [['tri', 15, 20, 105, 20, 60, 2]] },
       { shapes: [
         ['rect', 28, 28, 14, 12], ['rect', 53, 28, 14, 12], ['rect', 78, 28, 14, 12],
-      ] },                                                 // windows
+      ] },
     ],
     details(g, T, Y, s) {
       g.lineStyle(2, 0x000000, 0.4);
@@ -279,11 +314,11 @@ export default class ColorScene extends Phaser.Scene {
 
   create() {
     const W = 390, H = 844;
-    this._snd   = new SoundManager();
-    this._sel   = 0xff3333;
-    this._page  = 0;
-    this._zones = [];
-    this._olGfx = null;
+    this._snd     = new SoundManager();
+    this._sel     = 0xff3333;
+    this._page    = 0;
+    this._zones   = [];
+    this._olGfx   = null;
     this._refObjs = [];
 
     this._drawBg(W, H);
@@ -311,7 +346,6 @@ export default class ColorScene extends Phaser.Scene {
     arrow(28, '<', -1);
     arrow(W - 28, '>', 1);
 
-    // Parchment
     this.add.rectangle(W / 2, 308, 360, 462, 0xfff9ee).setDepth(1);
     const brdr = this.add.graphics().setDepth(2);
     brdr.lineStyle(4, 0xddbb66, 1);
@@ -364,7 +398,7 @@ export default class ColorScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(10);
     this._swatches = COLS.map((color, i) => {
       const col = i % perRow, row = Math.floor(i / perRow);
-      const sw = this.add.rectangle(x0 + col * (sz + gap), y0 + row * (sz + gap), sz - 2, sz - 2, color)
+      const sw  = this.add.rectangle(x0 + col * (sz + gap), y0 + row * (sz + gap), sz - 2, sz - 2, color)
         .setDepth(10).setInteractive({ useHandCursor: true });
       sw.setStrokeStyle(3, 0x333333);
       sw.on('pointerdown', () => { this._sel = color; this._refreshSwatches(); this._snd.tap(); });
@@ -394,16 +428,12 @@ export default class ColorScene extends Phaser.Scene {
     this._def  = def;
     this._subTitle.setText(`${def.label}   (${this._page + 1} / ${PAGE_ORDER.length})`);
 
-    // Environment parts drawn first (behind animal)
     if (def.sceneParts) this._processParts(def.sceneParts, ENV_DEF);
-
-    // Animal colorable parts
     this._processParts(def.parts, def);
 
     this._olGfx = this.add.graphics().setDepth(6);
     this._redrawOutline();
 
-    // In-game sprite as reference
     const ref = this.add.image(52, 116, def.tex).setDepth(11);
     ref.setScale(Math.min(54 / ref.width, 54 / ref.height));
     const lbl = this.add.text(52, 148, 'In game', {
@@ -426,7 +456,7 @@ export default class ColorScene extends Phaser.Scene {
       this._zones.push(gfx);
 
       part.shapes.forEach(sh => {
-        const hit  = this.add.graphics();
+        const hit   = this.add.graphics();
         const saved = this._def; this._def = xform;
         const [geom, contains] = this._geom(sh);
         this._def = saved;
@@ -441,6 +471,10 @@ export default class ColorScene extends Phaser.Scene {
   _t(x)  { return this._def.ox + x * this._def.s; }
   _ty(y) { return this._def.oy + y * this._def.s; }
 
+  _pts(sh) {
+    return sh[1].map(([x, y]) => ({ x: this._t(x), y: this._ty(y) }));
+  }
+
   _fillShape(g, sh) {
     const s = this._def.s;
     switch (sh[0]) {
@@ -450,6 +484,7 @@ export default class ColorScene extends Phaser.Scene {
       case 'tri':     g.fillTriangle(
         this._t(sh[1]), this._ty(sh[2]), this._t(sh[3]),
         this._ty(sh[4]), this._t(sh[5]), this._ty(sh[6])); break;
+      case 'poly':    g.fillPoints(this._pts(sh), true); break;
     }
   }
 
@@ -462,6 +497,7 @@ export default class ColorScene extends Phaser.Scene {
       case 'tri':     g.strokeTriangle(
         this._t(sh[1]), this._ty(sh[2]), this._t(sh[3]),
         this._ty(sh[4]), this._t(sh[5]), this._ty(sh[6])); break;
+      case 'poly':    g.strokePoints(this._pts(sh), true); break;
     }
   }
 
@@ -486,6 +522,10 @@ export default class ColorScene extends Phaser.Scene {
           this._ty(sh[4]), this._t(sh[5]), this._ty(sh[6])),
         Phaser.Geom.Triangle.Contains,
       ];
+      case 'poly': return [
+        new Phaser.Geom.Polygon(this._pts(sh)),
+        Phaser.Geom.Polygon.Contains,
+      ];
     }
   }
 
@@ -494,24 +534,16 @@ export default class ColorScene extends Phaser.Scene {
     const def = this._def;
     g.clear();
 
-    // Environment outlines (thin)
     if (def.sceneParts) {
       const saved = this._def;
       this._def = ENV_DEF;
       def.sceneParts.forEach(part =>
-        part.shapes.forEach(sh => {
-          g.lineStyle(2, 0x000000, 0.5);
-          this._strokeShape(g, sh);
-        }));
+        part.shapes.forEach(sh => { g.lineStyle(2, 0x000000, 0.5); this._strokeShape(g, sh); }));
       this._def = saved;
     }
 
-    // Animal outlines (thick)
     def.parts.forEach(part =>
-      part.shapes.forEach(sh => {
-        g.lineStyle(3, 0x000000, 1);
-        this._strokeShape(g, sh);
-      }));
+      part.shapes.forEach(sh => { g.lineStyle(3, 0x000000, 1); this._strokeShape(g, sh); }));
 
     if (def.details) {
       def.details(g, (x) => this._t(x), (y) => this._ty(y), def.s);
