@@ -133,3 +133,20 @@ adorable key-art composition. [STYLE] [NEGATIVE]
 - [ ] Flofy: nariz gris ovalada bordada (no rosa, no negra) y orejas caídas
 - [ ] Brillo dorado de Flofy presente pero sutil
 - [ ] Nada fotorrealista — si parece una niña real, descartar y regenerar
+
+---
+
+## Nota técnica para generar vía API de Replicate (sesión de Claude Code)
+
+- Modelo recomendado: `google/nano-banana` (Gemini image en Replicate) — admite
+  `image_input` con imágenes de referencia, ideal para consistencia de personaje.
+  Alternativa text-to-image para la imagen madre: `black-forest-labs/flux-1.1-pro`.
+- Endpoint síncrono:
+  `POST https://api.replicate.com/v1/models/google/nano-banana/predictions`
+  con header `Prefer: wait` y body `{"input": {"prompt": "...", "image_input": ["<url imagen madre>"], "aspect_ratio": "3:4", "output_format": "png"}}`.
+- El token se pasa en `Authorization: Bearer $REPLICATE_API_TOKEN` (pedirlo al
+  usuario o leerlo de la variable de entorno; NUNCA guardarlo en el repo).
+- Flujo: generar `elizabeth-front` → validar con el checklist → usar su URL de
+  salida como `image_input` en las otras 5 de Elizabeth → igual con Flofy desde
+  `flofy-front` → el dúo con ambas referencias → descargar todas a `assets/canon/`
+  → commit + push → enviar al usuario para aprobación.
