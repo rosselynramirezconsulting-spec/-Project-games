@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0a12" />
+  <title>Number Rush — GlitchRush</title>
+  <meta name="description" content="60 seconds of pure mental math. How high can you go? A GlitchRush arcade game." />
+
+  <!-- Social / share preview -->
+  <meta property="og:title" content="Number Rush — can you beat my score?" />
+  <meta property="og:description" content="60 seconds. Pure mental math. Built by GlitchRush. Play free in your browser." />
+  <meta property="og:type" content="website" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- FX layer (particles, background) -->
+    <canvas id="fx"></canvas>
+
+    <!-- MENU -->
+    <section id="menu" class="screen">
+      <button id="muteBtn" class="iconbtn" aria-label="Toggle sound">🔊</button>
+      <div class="menu-inner">
+        <h1 class="logo">NUMBER<span>RUSH</span></h1>
+        <p class="tag">60 seconds of pure mental math.<br />How high can you go?</p>
+        <button id="startBtn" class="btn primary">TAP TO PLAY</button>
+        <div class="best">BEST <b id="menuBest">0</b></div>
+      </div>
+      <div class="brand">glitchrush.gg</div>
+    </section>
+
+    <!-- GAME -->
+    <section id="game" class="screen hidden">
+      <div class="hud">
+        <div class="score-box">SCORE<b id="score">0</b></div>
+        <div class="mult" id="mult">x1</div>
+      </div>
+      <div class="timebar"><div id="timefill"></div></div>
+      <div class="combo-line" id="comboLine"></div>
+
+      <div class="problem-wrap">
+        <div class="problem" id="problem">7 + 8</div>
+      </div>
+
+      <div class="choices" id="choices"></div>
+
+      <!-- pre-game countdown -->
+      <div id="countdown" class="countdown hidden"><span></span></div>
+    </section>
+
+    <!-- GAME OVER -->
+    <section id="over" class="screen hidden">
+      <div class="over-inner">
+        <canvas id="card" width="1080" height="1350" aria-label="Your score card"></canvas>
+        <div class="overbtns">
+          <button id="shareBtn" class="btn primary">SHARE 🔥</button>
+          <div class="overbtns-row">
+            <button id="dlBtn" class="btn ghost">Save PNG</button>
+            <button id="againBtn" class="btn ghost">Play Again</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
