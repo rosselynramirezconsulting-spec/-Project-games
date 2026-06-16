@@ -1,0 +1,18 @@
+{
+  "name": "Tiny Town",
+  "short_name": "Tiny Town",
+  "description": "Un pueblito creativo para explorar, decorar y jugar libremente.",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#87CEEB",
+  "theme_color": "#87CEEB",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

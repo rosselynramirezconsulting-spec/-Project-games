@@ -1,0 +1,14 @@
+# Build artifacts
+tiny-town.zip
+*.zip
+
+# State & secrets
+tools/.state.json
+*.token
+.env
+.env.*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+node_modules/

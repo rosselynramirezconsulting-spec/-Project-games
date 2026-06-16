@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#87CEEB"/>
+  <circle cx="256" cy="270" r="150" fill="#6ec6f0"/>
+  <ellipse cx="210" cy="240" rx="110" ry="64" fill="#7bd389"/>
+  <ellipse cx="300" cy="310" rx="95" ry="56" fill="#5bbf6b"/>
+  <ellipse cx="270" cy="190" rx="64" ry="36" fill="#7bd389"/>
+  <circle cx="200" cy="150" r="40" fill="#ffd93d"/>
+  <text x="256" y="470" font-family="Arial Rounded MT Bold, Arial" font-size="68" font-weight="bold" fill="#ffffff" text-anchor="middle">TINY TOWN</text>
+</svg>
